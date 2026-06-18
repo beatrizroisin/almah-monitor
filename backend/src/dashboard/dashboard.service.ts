@@ -41,7 +41,7 @@ export class DashboardService {
         merchantSkus: snap?.totalMerchantSkus ?? 0,
         approvedSkus: snap?.approvedSkus ?? 0,
         disapprovedSkus: snap?.disapprovedSkus ?? 0,
-        variation: snap?.deltaApprovedPct ? `${snap.deltaApprovedPct > 0 ? '+' : ''}${snap.deltaApprovedPct}%` : '—',
+        variation: snap?.deltaApprovedPct ? `${Number(snap.deltaApprovedPct) > 0 ? '+' : ''}${snap.deltaApprovedPct}%` : '—',
         status: statusLabel,
       };
     });

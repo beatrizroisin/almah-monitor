@@ -100,7 +100,7 @@ export class IntegrationsService {
     const encrypted = this.crypto.encrypt({ appKey, appToken });
 
     await this.prisma.integration.upsert({
-      where: { clientId_type: { clientId, type: 'VTEX' } },
+      where: { clientId_type: { clientId, type: 'VTEX' } } as any,
       update: { credentialsEncrypted: encrypted, status: 'CONNECTED', errorMessage: null },
       create: { clientId, type: 'VTEX', credentialsEncrypted: encrypted, status: 'CONNECTED' },
     });
@@ -139,7 +139,7 @@ export class IntegrationsService {
     });
 
     await this.prisma.integration.upsert({
-      where: { clientId_type: { clientId, type: 'GOOGLE_MERCHANT' } },
+      where: { clientId_type: { clientId, type: 'GOOGLE_MERCHANT' } } as any,
       update: {
         credentialsEncrypted: encrypted,
         status: 'CONNECTED',
@@ -160,7 +160,9 @@ export class IntegrationsService {
 
   async revokeGoogle(clientId: string) {
     const integration = await this.prisma.integration.findUnique({
-      where: { clientId_type: { clientId, type: 'GOOGLE_MERCHANT' } },
+
+      
+      where: { clientId_type: { clientId, type: 'GOOGLE_MERCHANT' } } as any,
     });
     if (!integration) throw new NotFoundException('Integração Google não encontrada.');
     await this.prisma.integration.delete({ where: { id: integration.id } });
