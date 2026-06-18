@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 
+
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ClientsModule } from './clients/clients.module';
@@ -17,6 +18,7 @@ import { VtexModule } from './vtex/vtex.module';
 import { MerchantModule } from './merchant/merchant.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SkusModule } from './skus/skus.module';
+import { SeedController } from './seed.controller';
 
 import { GlobalAuthGuard } from './common/guards/global-auth.guard';
 
@@ -39,6 +41,7 @@ import { GlobalAuthGuard } from './common/guards/global-auth.guard';
     DashboardModule,
     SkusModule,
   ],
+  controllers: [SeedController],
   providers: [
     Reflector,
     { provide: APP_GUARD, useClass: GlobalAuthGuard },
