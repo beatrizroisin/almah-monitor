@@ -9,7 +9,7 @@ RUN npm install
 
 COPY . .
 RUN npx prisma generate
-RUN npx tsc -p tsconfig.json --noEmitOnError false 2>&1 || true
+RUN npx nest build || true
 RUN test -f dist/main.js && echo "✓ dist/main.js OK" || (echo "✗ FALHOU" && exit 1)
 
 EXPOSE 3000
