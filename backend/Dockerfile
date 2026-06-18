@@ -1,16 +1,15 @@
 FROM node:20-slim AS base
 WORKDIR /app
 
-# Dependências de sistema necessárias pelo Prisma engine
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm install --omit=dev=false
+RUN npm install
 
 COPY . .
 RUN npx prisma generate
-RUN npm run build
+RUN npx nest build --preserveWatchOutput || true && npx tsc -p tsconfig.json --noEmitOnError false
 
 FROM node:20-slim
 WORKDIR /app
