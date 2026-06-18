@@ -1,0 +1,37 @@
+@use '../../styles/tokens' as t;
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 10px;
+  white-space: nowrap;
+
+  &--red {
+    background: t.$red-light;
+    color: t.$red-text;
+  }
+
+  &--orange {
+    background: t.$orange-light;
+    color: t.$orange-text;
+  }
+
+  &--green {
+    background: t.$green-light;
+    color: t.$green-text;
+  }
+
+  &--blue {
+    background: t.$blue-light;
+    color: t.$blue-text;
+  }
+
+  &--gray {
+    background: t.$bg-secondary;
+    color: t.$text-secondary;
+    border: 1px solid t.$border;
+  }
+}

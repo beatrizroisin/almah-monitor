@@ -1,0 +1,67 @@
+// ────────────────────────────────────────────────────────────
+// ALMAH Monitor — Design tokens
+// Paleta derivada do protótipo aprovado: azul institucional +
+// semáforo vermelho/laranja/verde para status de saúde do cliente.
+// ────────────────────────────────────────────────────────────
+
+// Cores base
+$bg-primary: #ffffff;
+$bg-secondary: #f7f7f5;
+$bg-tertiary: #f0efec;
+
+$text-primary: #1a1a1a;
+$text-secondary: #5f5e5a;
+$text-tertiary: #9a9890;
+
+$border: rgba(0, 0, 0, 0.1);
+$border-md: rgba(0, 0, 0, 0.18);
+
+// Azul — marca / ações primárias
+$blue: #185fa5;
+$blue-dark: #0c447c;
+$blue-light: #e6f1fb;
+$blue-text: #0c447c;
+
+// Vermelho — crítico
+$red: #e24b4a;
+$red-light: #fcebeb;
+$red-text: #a32d2d;
+
+// Laranja — atenção
+$orange: #ef9f27;
+$orange-light: #faeeda;
+$orange-text: #854f0b;
+
+// Verde — saudável
+$green: #639922;
+$green-light: #eaf3de;
+$green-text: #3b6d11;
+
+// Raios
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+
+// Layout
+$sidebar-w: 224px;
+$topbar-h: 52px;
+$mobile-tabbar-h: 58px;
+
+// Tipografia
+$font-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+// Breakpoints
+$bp-mobile: 640px;
+$bp-tablet: 900px;
+$bp-desktop: 1280px;
+
+// Sombras
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+// Transições
+$ease: cubic-bezier(0.4, 0, 0.2, 1);
+$transition-fast: 0.12s $ease;
+$transition-base: 0.2s $ease;

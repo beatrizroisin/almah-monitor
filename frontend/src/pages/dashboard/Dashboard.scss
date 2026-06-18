@@ -1,0 +1,41 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.dashboard {
+  &__two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+
+    @include m.tablet {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__no-alerts {
+    padding: 30px 16px;
+    text-align: center;
+    color: t.$text-secondary;
+    font-size: 12px;
+  }
+}
+
+.cell-name {
+  @include m.flex(center, flex-start, 8px);
+}
+
+.fw {
+  font-weight: 600;
+}
+
+.page-loading,
+.page-error {
+  padding: 60px 20px;
+  text-align: center;
+  color: t.$text-secondary;
+  font-size: 13px;
+}
+
+.page-error {
+  color: t.$red-text;
+}

@@ -1,0 +1,105 @@
+@use 'tokens' as t;
+@use 'mixins' as m;
+
+// ────────────────────────────────────────────────────────────
+// CSS custom properties — espelham os tokens SCSS para uso em
+// estilos inline (ex: cor dinâmica de status calculada em JS).
+// ────────────────────────────────────────────────────────────
+:root {
+  --bg-primary: #{t.$bg-primary};
+  --bg-secondary: #{t.$bg-secondary};
+  --bg-tertiary: #{t.$bg-tertiary};
+  --text-primary: #{t.$text-primary};
+  --text-secondary: #{t.$text-secondary};
+  --text-tertiary: #{t.$text-tertiary};
+  --border: #{t.$border};
+  --border-md: #{t.$border-md};
+
+  --blue: #{t.$blue};
+  --blue-dark: #{t.$blue-dark};
+  --blue-light: #{t.$blue-light};
+  --blue-text: #{t.$blue-text};
+
+  --red: #{t.$red};
+  --red-light: #{t.$red-light};
+  --red-text: #{t.$red-text};
+
+  --orange: #{t.$orange};
+  --orange-light: #{t.$orange-light};
+  --orange-text: #{t.$orange-text};
+
+  --green: #{t.$green};
+  --green-light: #{t.$green-light};
+  --green-text: #{t.$green-text};
+}
+
+// ────────────────────────────────────────────────────────────
+// Reset
+// ────────────────────────────────────────────────────────────
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: t.$font-base;
+  font-size: 14px;
+  color: t.$text-primary;
+  background: t.$bg-tertiary;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  font-size: inherit;
+}
+
+// Respeitar preferência de movimento reduzido
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+// Foco visível para acessibilidade (teclado)
+:focus-visible {
+  @include m.focus-ring;
+}
+
+#root {
+  height: 100vh;
+  height: 100dvh;
+}
+
+// Scrollbar global fina
+* {
+  @include m.scrollbar-thin;
+}

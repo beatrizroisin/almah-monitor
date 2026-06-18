@@ -1,0 +1,30 @@
+@use '../../styles/tokens' as t;
+
+.info-box {
+  border-radius: t.$radius-md;
+  padding: 11px 13px;
+  font-size: 12px;
+  line-height: 1.6;
+
+  &--blue {
+    background: t.$blue-light;
+    color: t.$blue-text;
+    border-left: 3px solid t.$blue;
+    border-radius: 0 t.$radius-md t.$radius-md 0;
+  }
+
+  &--red {
+    background: t.$red-light;
+    color: t.$red-text;
+  }
+
+  &--orange {
+    background: t.$orange-light;
+    color: t.$orange-text;
+  }
+
+  &--green {
+    background: t.$green-light;
+    color: t.$green-text;
+  }
+}

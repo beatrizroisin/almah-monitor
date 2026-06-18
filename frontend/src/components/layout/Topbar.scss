@@ -1,0 +1,78 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.topbar {
+  height: t.$topbar-h;
+  background: t.$bg-primary;
+  border-bottom: 1px solid t.$border;
+  @include m.flex(center, space-between, 12px);
+  padding: 0 20px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  @include m.mobile {
+    padding: 0 12px;
+  }
+
+  &__title {
+    font-size: 15px;
+    font-weight: 600;
+    @include m.truncate;
+  }
+
+  &__actions {
+    @include m.flex(center, flex-end, 8px);
+    flex-shrink: 0;
+  }
+
+  &__sync-indicator {
+    @include m.flex(center, flex-start, 5px);
+    font-size: 11px;
+    color: t.$text-secondary;
+    white-space: nowrap;
+
+    @include m.mobile {
+      display: none;
+    }
+  }
+
+  &__pulse {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: t.$green;
+    animation: topbar-pulse 2s infinite;
+  }
+
+  &__spinner {
+    width: 9px;
+    height: 9px;
+    border: 2px solid rgba(0, 0, 0, 0.12);
+    border-top-color: t.$blue;
+    border-radius: 50%;
+    animation: topbar-spin 0.7s linear infinite;
+  }
+
+  &__sync-btn span:last-child {
+    @include m.mobile {
+      display: none;
+    }
+  }
+
+  &__new-btn span:last-child {
+    @include m.mobile {
+      display: none;
+    }
+  }
+}
+
+@keyframes topbar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes topbar-spin {
+  to { transform: rotate(360deg); }
+}

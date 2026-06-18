@@ -1,0 +1,108 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.rtable {
+  &__empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: t.$text-secondary;
+    font-size: 13px;
+  }
+
+  &__scroll {
+    overflow-x: auto;
+    @include m.mobile {
+      display: none;
+    }
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+
+    th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: t.$text-secondary;
+      border-bottom: 1px solid t.$border;
+      background: t.$bg-secondary;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid t.$border;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: t.$bg-secondary;
+    }
+  }
+
+  &__row--clickable {
+    cursor: pointer;
+  }
+
+  // Mobile cards
+  &__cards {
+    display: none;
+
+    @include m.mobile {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
+    }
+  }
+
+  &__card {
+    border: 1px solid t.$border;
+    border-radius: t.$radius-md;
+    padding: 12px;
+    background: t.$bg-primary;
+
+    &--clickable {
+      cursor: pointer;
+    }
+  }
+
+  &__card-primary {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  &__card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+  }
+
+  &__card-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__card-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: t.$text-tertiary;
+  }
+
+  &__card-value {
+    font-size: 12px;
+    color: t.$text-primary;
+  }
+}

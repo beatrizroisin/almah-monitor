@@ -1,0 +1,64 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.metrics-grid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  grid-template-columns: repeat(4, 1fr);
+
+  &--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include m.tablet {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include m.mobile {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+.metric {
+  background: t.$bg-secondary;
+  border-radius: t.$radius-md;
+  padding: 12px 14px;
+
+  @include m.mobile {
+    padding: 10px 12px;
+  }
+
+  &__label {
+    font-size: 11px;
+    color: t.$text-secondary;
+    margin-bottom: 4px;
+    @include m.truncate;
+  }
+
+  &__value {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: t.$text-primary;
+
+    @include m.mobile {
+      font-size: 18px;
+    }
+  }
+
+  &__delta {
+    font-size: 11px;
+    margin-top: 3px;
+    color: t.$text-secondary;
+
+    &--up {
+      color: t.$green;
+    }
+
+    &--down {
+      color: t.$red;
+    }
+  }
+}

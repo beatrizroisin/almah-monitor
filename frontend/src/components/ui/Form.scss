@@ -1,0 +1,101 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.form-grid {
+  display: grid;
+  gap: 12px 16px;
+  grid-template-columns: repeat(2, 1fr);
+
+  &--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @include m.tablet {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-full {
+  grid-column: 1 / -1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: t.$text-secondary;
+  }
+
+  &__required {
+    color: t.$red;
+    margin-left: 2px;
+  }
+
+  &__hint {
+    font-size: 11px;
+    color: t.$text-tertiary;
+    margin-top: 2px;
+  }
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+select,
+textarea {
+  width: 100%;
+  padding: 8px 11px;
+  font-size: 13px;
+  font-family: t.$font-base;
+  border: 1px solid t.$border-md;
+  border-radius: t.$radius-md;
+  background: t.$bg-primary;
+  color: t.$text-primary;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: t.$blue;
+    box-shadow: 0 0 0 2px rgba(24, 95, 165, 0.12);
+  }
+
+  &:disabled {
+    background: t.$bg-secondary;
+    color: t.$text-secondary;
+    cursor: not-allowed;
+  }
+}
+
+textarea {
+  resize: vertical;
+  min-height: 70px;
+  line-height: 1.5;
+}
+
+.divider {
+  height: 1px;
+  background: t.$border;
+  margin: 16px 0;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: t.$text-tertiary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+.form-actions {
+  @include m.flex(center, space-between, 10px);
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid t.$border;
+  flex-wrap: wrap;
+}

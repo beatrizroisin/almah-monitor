@@ -1,0 +1,40 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.wsuccess {
+  @include m.flex(center, center);
+  flex-direction: column;
+  text-align: center;
+  padding: 60px 24px;
+  max-width: 420px;
+  margin: 0 auto;
+
+  &__icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: t.$green-light;
+    color: t.$green;
+    @include m.flex(center, center);
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  p {
+    font-size: 13px;
+    color: t.$text-secondary;
+    margin-bottom: 20px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+  }
+}

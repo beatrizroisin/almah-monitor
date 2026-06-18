@@ -1,0 +1,40 @@
+# Banco de dados: usando Supabase (não provisionamos Postgres no Render).
+# Preencha DATABASE_URL e DIRECT_URL manualmente no painel do Render com
+# os valores do Supabase (Project Settings → Database → Connection string).
+# Ver backend/.env.example para o formato exato de cada uma.
+
+services:
+  - type: redis
+    name: almah-monitor-redis
+    plan: starter
+    region: oregon
+    ipAllowList: []
+
+  - type: web
+    name: almah-monitor-backend
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        sync: false # preencher manualmente com a connection string do Supabase (pooler, porta 6543, com ?pgbouncer=true)
+      - key: DIRECT_URL
+        sync: false # preencher manualmente com a connection string direta do Supabase (porta 5432)
+      - key: REDIS_URL
+        fromService:
+          name: almah-monitor-redis
+          type: redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CRYPTO_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # As demais (GOOGLE_*, SMTP_*, DISCORD_*, WHATSAPP_*, APP_FRONTEND_URL)
+      # devem ser preenchidas manualmente no painel do Render.

@@ -1,0 +1,328 @@
+// ALMAH Monitor — Schema do banco
+// Espelha fielmente o documento 02_almah_schema_banco_v2.docx
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // directUrl é usada apenas para migrations (prisma migrate deploy/dev).
+  // Necessária quando DATABASE_URL aponta para um connection pooler que
+  // não suporta certas operações (ex: pgbouncer do Supabase). Se o banco
+  // não usa pooler (Render/Railway nativos), pode apontar para a mesma
+  // string de DATABASE_URL sem problema.
+  directUrl = env("DIRECT_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  MEDIA
+  DEVELOPER
+  READONLY
+}
+
+enum ClientStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  ERROR
+}
+
+enum IntegrationType {
+  GOOGLE_MERCHANT
+  VTEX
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  ERROR
+  EXPIRED
+  PENDING
+}
+
+enum ApprovalStatus {
+  APPROVED
+  DISAPPROVED
+  PENDING
+  EXPIRING
+}
+
+enum DestinationStatus {
+  APPROVED
+  DISAPPROVED
+  PENDING
+  UNSPECIFIED
+}
+
+enum AlertSeverity {
+  RED
+  ORANGE
+  YELLOW
+}
+
+enum AlertStatus {
+  OPEN
+  RESOLVED
+  IGNORED
+}
+
+enum SyncTriggeredBy {
+  SCHEDULER
+  MANUAL
+}
+
+enum SyncStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+enum PriorityReason {
+  HIGH_REVENUE
+  CAMPAIGN_ACTIVE
+  BESTSELLER
+  STRATEGIC
+  HIGH_MARGIN
+}
+
+// ── 2.1 users ──────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(200)
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(READONLY)
+  isActive     Boolean  @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  clientsAsMediaOwner Client[] @relation("MediaOwner")
+  clientsAsDevOwner   Client[] @relation("DevOwner")
+  resolvedAlerts      Alert[]  @relation("ResolvedBy")
+  alertComments       AlertComment[]
+  manualSyncs         SyncLog[]
+  skuPriorities       ClientSkuPriority[]
+
+  @@map("users")
+}
+
+// ── 2.2 clients ────────────────────────────────────────
+
+model Client {
+  id                 String       @id @default(uuid()) @db.Uuid
+  name               String       @db.VarChar(100)
+  platform           String       @default("VTEX") @db.VarChar(20)
+  vtexAccount        String       @unique @map("vtex_account") @db.VarChar(100)
+  merchantId         String       @unique @map("merchant_id") @db.VarChar(50)
+  storeUrl           String?      @map("store_url")
+  status             ClientStatus @default(PENDING)
+  integrationStatus  Json?        @map("integration_status")
+  mediaOwnerId       String?      @map("media_owner_id") @db.Uuid
+  devOwnerId         String?      @map("dev_owner_id") @db.Uuid
+  notes              String?
+  lastSyncAt         DateTime?    @map("last_sync_at")
+  syncError          String?      @map("sync_error")
+  notificationConfig Json?        @map("notification_config")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+  deletedAt          DateTime?    @map("deleted_at")
+
+  mediaOwner   User? @relation("MediaOwner", fields: [mediaOwnerId], references: [id])
+  devOwner     User? @relation("DevOwner", fields: [devOwnerId], references: [id])
+
+  integrations        Integration[]
+  vtexSkus            VtexSku[]
+  merchantProducts    MerchantProduct[]
+  healthSnapshots     SkuHealthSnapshot[]
+  alerts              Alert[]
+  syncLogs            SyncLog[]
+  skuPriorities       ClientSkuPriority[]
+
+  @@map("clients")
+}
+
+// ── 2.3 integrations ────────────────────────────────────
+// UNIQUE(client_id, type) — no máx. 1 GOOGLE + 1 VTEX por cliente
+
+model Integration {
+  id                   String            @id @default(uuid()) @db.Uuid
+  clientId             String            @map("client_id") @db.Uuid
+  type                 IntegrationType
+  credentialsEncrypted String            @map("credentials_encrypted")
+  status               IntegrationStatus @default(PENDING)
+  expiresAt            DateTime?         @map("expires_at")
+  lastSyncAt           DateTime?         @map("last_sync_at")
+  errorMessage         String?           @map("error_message")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, type], name: "idx_integrations_client_type")
+  @@map("integrations")
+}
+
+// ── 2.4 vtex_skus ────────────────────────────────────────
+
+model VtexSku {
+  id          String   @id @default(uuid()) @db.Uuid
+  clientId    String   @map("client_id") @db.Uuid
+  skuId       String   @map("sku_id") @db.VarChar(50)
+  productId   String   @map("product_id") @db.VarChar(50)
+  name        String   @db.VarChar(500)
+  brand       String?  @db.VarChar(200)
+  category    String?  @db.VarChar(300)
+  price       Decimal? @db.Decimal(12, 2)
+  listPrice   Decimal? @map("list_price") @db.Decimal(12, 2)
+  stock       Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  isVisible   Boolean  @default(true) @map("is_visible")
+  gtin        String?  @db.VarChar(50)
+  imageUrl    String?  @map("image_url")
+  productUrl  String?  @map("product_url")
+  collectedAt DateTime @map("collected_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, skuId])
+  @@index([clientId])
+  @@map("vtex_skus")
+}
+
+// ── 2.5 merchant_products ───────────────────────────────
+
+model MerchantProduct {
+  id                  String             @id @default(uuid()) @db.Uuid
+  clientId            String             @map("client_id") @db.Uuid
+  offerId             String             @map("offer_id") @db.VarChar(200)
+  googleProductId     String?            @map("google_product_id") @db.VarChar(200)
+  title               String?            @db.VarChar(500)
+  approvalStatus      ApprovalStatus     @map("approval_status")
+  shoppingAdsStatus   DestinationStatus  @map("shopping_ads_status")
+  freeListingsStatus  DestinationStatus  @map("free_listings_status")
+  issues              Json?
+  destinationStatuses Json?              @map("destination_statuses")
+  googleCreatedAt     DateTime?          @map("google_created_at")
+  googleUpdatedAt     DateTime?          @map("google_updated_at")
+  expirationDate      DateTime?          @map("expiration_date")
+  collectedAt         DateTime           @map("collected_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("merchant_products")
+}
+
+// ── 2.6 sku_health_snapshots ────────────────────────────
+// UNIQUE(client_id, snapshot_date) — um snapshot por cliente por dia
+
+model SkuHealthSnapshot {
+  id                 String   @id @default(uuid()) @db.Uuid
+  clientId           String   @map("client_id") @db.Uuid
+  snapshotDate        DateTime @map("snapshot_date") @db.Date
+  totalVtexSkus      Int      @default(0) @map("total_vtex_skus")
+  totalMerchantSkus  Int      @default(0) @map("total_merchant_skus")
+  approvedSkus       Int      @default(0) @map("approved_skus")
+  disapprovedSkus    Int      @default(0) @map("disapproved_skus")
+  pendingSkus        Int      @default(0) @map("pending_skus")
+  expiredSkus        Int      @default(0) @map("expired_skus")
+  missingSkus        Int      @default(0) @map("missing_skus")
+  deltaApproved      Int?     @map("delta_approved")
+  deltaApprovedPct   Decimal? @map("delta_approved_pct") @db.Decimal(5, 2)
+  healthScore        Int?     @map("health_score")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, snapshotDate])
+  @@index([clientId])
+  @@map("sku_health_snapshots")
+}
+
+// ── 2.7 alerts ───────────────────────────────────────────
+
+model Alert {
+  id                  String        @id @default(uuid()) @db.Uuid
+  clientId            String        @map("client_id") @db.Uuid
+  severity            AlertSeverity
+  title               String        @db.VarChar(200)
+  message             String
+  affectedSkusCount   Int           @default(0) @map("affected_skus_count")
+  mainCauses          Json?         @map("main_causes")
+  ruleCode            String?       @map("rule_code") @db.VarChar(100)
+  status              AlertStatus   @default(OPEN)
+  resolvedById        String?       @map("resolved_by_id") @db.Uuid
+  resolvedAt          DateTime?     @map("resolved_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+
+  client     Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  resolvedBy User?  @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  comments   AlertComment[]
+
+  @@index([clientId])
+  @@map("alerts")
+}
+
+// ── 2.8 alert_comments ──────────────────────────────────
+
+model AlertComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  alertId   String   @map("alert_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("alert_comments")
+}
+
+// ── 2.9 sync_logs ────────────────────────────────────────
+
+model SyncLog {
+  id                          String          @id @default(uuid()) @db.Uuid
+  clientId                    String          @map("client_id") @db.Uuid
+  triggeredBy                 SyncTriggeredBy @map("triggered_by")
+  triggeredByUserId            String?         @map("triggered_by_user_id") @db.Uuid
+  status                      SyncStatus
+  vtexSkusCollected            Int?            @map("vtex_skus_collected")
+  merchantProductsCollected    Int?            @map("merchant_products_collected")
+  alertsGenerated              Int             @default(0) @map("alerts_generated")
+  errorMessage                String?         @map("error_message")
+  startedAt                   DateTime        @map("started_at")
+  finishedAt                  DateTime?       @map("finished_at")
+  durationMs                  Int?            @map("duration_ms")
+
+  client           Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  triggeredByUser  User?  @relation(fields: [triggeredByUserId], references: [id])
+
+  @@index([clientId])
+  @@map("sync_logs")
+}
+
+// ── 2.10 client_sku_priorities ──────────────────────────
+
+model ClientSkuPriority {
+  id             String         @id @default(uuid()) @db.Uuid
+  clientId       String         @map("client_id") @db.Uuid
+  skuId          String         @map("sku_id") @db.VarChar(50)
+  priorityReason PriorityReason @map("priority_reason")
+  notes          String?
+  createdById    String?        @map("created_by_id") @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy User?  @relation(fields: [createdById], references: [id])
+
+  @@map("client_sku_priorities")
+}

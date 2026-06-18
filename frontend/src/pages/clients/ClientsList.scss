@@ -1,0 +1,20 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.clients-list {
+  &__search {
+    width: 200px;
+    font-size: 12px;
+    padding: 6px 10px;
+    border: 1px solid t.$border-md;
+    border-radius: t.$radius-md;
+
+    @include m.mobile {
+      width: 100%;
+    }
+  }
+
+  &__row-actions {
+    @include m.flex(center, flex-start, 4px);
+  }
+}

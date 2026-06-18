@@ -1,0 +1,70 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.login {
+  height: 100vh;
+  height: 100dvh;
+  @include m.flex(center, center);
+  background: t.$bg-tertiary;
+  padding: 20px;
+
+  &__card {
+    background: t.$bg-primary;
+    border: 1px solid t.$border;
+    border-radius: t.$radius-lg;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: t.$shadow-md;
+  }
+
+  &__logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: t.$blue-dark;
+    text-align: center;
+  }
+
+  &__sub {
+    font-size: 12px;
+    color: t.$text-tertiary;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  &__field {
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: t.$text-secondary;
+  }
+
+  input {
+    padding: 9px 11px;
+    border: 1px solid t.$border-md;
+    border-radius: t.$radius-md;
+    font-size: 13px;
+    outline: none;
+    transition: border-color t.$transition-fast;
+
+    &:focus {
+      border-color: t.$blue;
+      box-shadow: 0 0 0 2px rgba(24, 95, 165, 0.12);
+    }
+  }
+
+  &__error {
+    background: t.$red-light;
+    color: t.$red-text;
+    border-radius: t.$radius-sm;
+    padding: 8px 10px;
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+}

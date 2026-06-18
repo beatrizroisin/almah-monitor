@@ -1,0 +1,94 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.btn {
+  @include m.flex(center, center, 6px);
+  border: 1px solid t.$border-md;
+  border-radius: t.$radius-md;
+  background: t.$bg-primary;
+  color: t.$text-primary;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background t.$transition-fast, transform t.$transition-fast;
+
+  &:hover:not(:disabled) {
+    background: t.$bg-secondary;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  &--md {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+
+  &--sm {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  &--full {
+    width: 100%;
+  }
+
+  &--primary {
+    background: t.$blue;
+    color: #fff;
+    border-color: t.$blue;
+
+    &:hover:not(:disabled) {
+      background: t.$blue-dark;
+      border-color: t.$blue-dark;
+    }
+  }
+
+  &--success {
+    background: t.$green-light;
+    color: t.$green-text;
+    border-color: #c0dd97;
+
+    &:hover:not(:disabled) {
+      background: #d8ecb0;
+    }
+  }
+
+  &--danger {
+    background: t.$red-light;
+    color: t.$red-text;
+    border-color: #f7c1c1;
+
+    &:hover:not(:disabled) {
+      background: #f5c8c8;
+    }
+  }
+}
+
+.btn__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  display: inline-block;
+  animation: btn-spin 0.7s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

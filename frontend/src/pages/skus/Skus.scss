@@ -1,0 +1,28 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.skus-page {
+  &__controls {
+    @include m.flex(center, flex-end, 8px);
+    flex-wrap: wrap;
+
+    select {
+      font-size: 12px;
+      padding: 6px 8px;
+      border: 1px solid t.$border-md;
+      border-radius: t.$radius-md;
+      background: t.$bg-primary;
+      max-width: 160px;
+    }
+  }
+}
+
+.mono {
+  font-family: t.$font-mono;
+  font-size: 11px;
+  color: t.$text-secondary;
+}
+
+.fw {
+  font-weight: 600;
+}

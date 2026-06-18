@@ -1,0 +1,80 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.alert-item {
+  display: flex;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid t.$border;
+  border-left: 3px solid transparent;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &--resolved {
+    opacity: 0.45;
+  }
+
+  &--red {
+    border-left-color: t.$red;
+  }
+
+  &--orange {
+    border-left-color: t.$orange;
+  }
+
+  &__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: t.$radius-md;
+    @include m.flex(center, center);
+    flex-shrink: 0;
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    &--red {
+      background: t.$red-light;
+      color: t.$red-text;
+    }
+
+    &--orange {
+      background: t.$orange-light;
+      color: t.$orange-text;
+    }
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    @include m.flex(center, flex-start, 8px);
+    flex-wrap: wrap;
+  }
+
+  &__desc {
+    font-size: 12px;
+    color: t.$text-secondary;
+    margin-top: 3px;
+    line-height: 1.5;
+  }
+
+  &__meta {
+    font-size: 11px;
+    color: t.$text-tertiary;
+    margin-top: 5px;
+  }
+
+  &__actions {
+    @include m.flex(center, flex-start, 6px);
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+}

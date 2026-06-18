@@ -1,0 +1,84 @@
+@use 'tokens' as t;
+
+// ────────────────────────────────────────────────────────────
+// Mixins
+// ────────────────────────────────────────────────────────────
+
+@mixin mobile {
+  @media (max-width: #{t.$bp-mobile}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: #{t.$bp-tablet}) {
+    @content;
+  }
+}
+
+@mixin desktop-up {
+  @media (min-width: #{t.$bp-tablet + 1px}) {
+    @content;
+  }
+}
+
+@mixin flex($align: center, $justify: flex-start, $gap: 0) {
+  display: flex;
+  align-items: $align;
+  justify-content: $justify;
+  @if $gap != 0 {
+    gap: $gap;
+  }
+}
+
+@mixin card {
+  background: t.$bg-primary;
+  border: 1px solid t.$border;
+  border-radius: t.$radius-lg;
+  overflow: hidden;
+}
+
+@mixin truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(24, 95, 165, 0.25);
+  border-color: t.$blue;
+}
+
+@mixin scrollbar-thin {
+  &::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: t.$border-md;
+    border-radius: 3px;
+  }
+}
+
+@mixin status-colors($status) {
+  @if $status == 'red' {
+    background: t.$red-light;
+    color: t.$red-text;
+  } @else if $status == 'orange' {
+    background: t.$orange-light;
+    color: t.$orange-text;
+  } @else if $status == 'green' {
+    background: t.$green-light;
+    color: t.$green-text;
+  } @else if $status == 'blue' {
+    background: t.$blue-light;
+    color: t.$blue-text;
+  } @else {
+    background: t.$bg-secondary;
+    color: t.$text-secondary;
+  }
+}

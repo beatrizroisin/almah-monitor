@@ -1,0 +1,33 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.tabs-bar {
+  display: flex;
+  border-bottom: 1px solid t.$border;
+  padding: 0 16px;
+  background: t.$bg-primary;
+  overflow-x: auto;
+
+  &__tab {
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: t.$text-secondary;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s t.$ease;
+    white-space: nowrap;
+
+    &:hover {
+      color: t.$text-primary;
+    }
+
+    &--active {
+      color: t.$blue;
+      border-bottom-color: t.$blue;
+      font-weight: 600;
+    }
+  }
+}

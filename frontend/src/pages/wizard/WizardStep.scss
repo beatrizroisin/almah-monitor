@@ -1,0 +1,203 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.wizard-step {
+  max-width: 760px;
+  margin: 0 auto;
+
+  &__error {
+    background: t.$red-light;
+    color: t.$red-text;
+    border-radius: t.$radius-sm;
+    padding: 10px 12px;
+    font-size: 12px;
+    margin-top: 14px;
+  }
+}
+
+.perm-row {
+  @include m.flex(center, space-between, 12px);
+  padding: 9px 0;
+  border-bottom: 1px solid t.$border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.perm-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.perm-scope {
+  font-size: 11px;
+  color: t.$text-secondary;
+  font-family: t.$font-mono;
+  margin-top: 1px;
+}
+
+.toggle {
+  width: 34px;
+  height: 19px;
+  background: t.$blue;
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  border: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px;
+    right: 3px;
+    transition: right 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  &--off {
+    background: t.$border-md;
+
+    &::after {
+      right: auto;
+      left: 3px;
+    }
+  }
+}
+
+.summary-row {
+  @include m.flex(center, space-between, 8px);
+  padding: 7px 0;
+  border-bottom: 1px solid t.$border;
+  font-size: 13px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.summary-label {
+  color: t.$text-secondary;
+}
+
+.summary-value {
+  font-weight: 600;
+}
+
+.oauth-btn {
+  @include m.flex(center, flex-start, 10px);
+  padding: 12px 14px;
+  border: 1px solid t.$border-md;
+  border-radius: t.$radius-md;
+  background: t.$bg-primary;
+  cursor: pointer;
+  font-size: 13px;
+  color: t.$text-primary;
+  transition: background 0.1s;
+  width: 100%;
+
+  &:hover {
+    background: t.$bg-secondary;
+  }
+}
+
+.g-icon {
+  width: 22px;
+  height: 22px;
+  background: #4285f4;
+  border-radius: 4px;
+  @include m.flex(center, center);
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.notif-item {
+  @include m.flex(center, space-between, 12px);
+  padding: 11px 0;
+  border-bottom: 1px solid t.$border;
+  flex-wrap: wrap;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.notif-left {
+  @include m.flex(center, flex-start, 10px);
+}
+
+.notif-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: t.$radius-md;
+  @include m.flex(center, center);
+  flex-shrink: 0;
+
+  svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+.notif-right {
+  @include m.flex(center, flex-start, 10px);
+  flex: 1;
+  justify-content: flex-end;
+
+  @include m.mobile {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.notif-input {
+  width: 210px;
+
+  @include m.mobile {
+    width: 100%;
+    flex: 1;
+  }
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  @include m.mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.review-box {
+  border: 1px solid t.$border;
+  border-radius: t.$radius-md;
+  padding: 12px;
+}
+
+.wizard-step__info,
+.wizard-step__result {
+  margin-bottom: 16px;
+}
+
+.wizard-step__test-btn {
+  margin-bottom: 12px;
+}
+
+.wizard-step__merchant-id {
+  font-family: t.$font-mono;
+  font-size: 13px;
+  padding: 9px 12px;
+  background: t.$bg-secondary;
+  border-radius: t.$radius-md;
+  margin-bottom: 16px;
+}

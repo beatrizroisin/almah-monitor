@@ -1,0 +1,51 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.causes {
+  &__empty {
+    padding: 20px;
+    text-align: center;
+    color: t.$text-secondary;
+    font-size: 12px;
+  }
+
+  &__item {
+    @include m.flex(center, space-between, 10px);
+    padding: 7px 0;
+    border-bottom: 1px solid t.$border;
+    font-size: 12px;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__right {
+    @include m.flex(center, flex-end, 10px);
+    flex-shrink: 0;
+  }
+
+  &__bar-wrap {
+    width: 90px;
+    height: 5px;
+    background: t.$bg-secondary;
+    border-radius: 3px;
+    overflow: hidden;
+
+    @include m.mobile {
+      width: 60px;
+    }
+  }
+
+  &__bar {
+    height: 100%;
+    border-radius: 3px;
+  }
+
+  &__count {
+    font-size: 11px;
+    color: t.$text-secondary;
+    width: 42px;
+    text-align: right;
+  }
+}

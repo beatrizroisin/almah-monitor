@@ -1,0 +1,58 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.card {
+  @include m.card;
+  margin-bottom: 14px;
+
+  &__header {
+    padding: 13px 16px;
+    border-bottom: 1px solid t.$border;
+    @include m.flex(center, space-between, 10px);
+    flex-wrap: wrap;
+  }
+
+  &__header-left {
+    @include m.flex(center, flex-start, 10px);
+    min-width: 0;
+  }
+
+  &__header-actions {
+    @include m.flex(center, flex-start, 8px);
+    flex-wrap: wrap;
+  }
+
+  &__title-block {
+    @include m.flex(center, flex-start, 10px);
+    min-width: 0;
+  }
+
+  &__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: t.$radius-md;
+    @include m.flex(center, center);
+    flex-shrink: 0;
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    @include m.truncate;
+  }
+
+  &__subtitle {
+    font-size: 11px;
+    color: t.$text-secondary;
+    margin-top: 1px;
+  }
+
+  &__body {
+    padding: 16px;
+  }
+}

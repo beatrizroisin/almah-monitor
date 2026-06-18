@@ -1,0 +1,22 @@
+@use 'reset';
+
+// Tokens e mixins são importados individualmente em cada módulo SCSS
+// via @use 'styles/tokens' as t / @use 'styles/mixins' as m.
+// Este arquivo cobre apenas reset + estilos verdadeiramente globais.
+
+:root {
+  color-scheme: light;
+}
+
+// Classe utilitária usada em alguns componentes para leitores de tela
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

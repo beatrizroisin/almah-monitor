@@ -1,0 +1,9 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.avatar {
+  border-radius: t.$radius-md;
+  font-weight: 700;
+  flex-shrink: 0;
+  @include m.flex(center, center);
+}

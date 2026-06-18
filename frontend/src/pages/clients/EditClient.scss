@@ -1,0 +1,13 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.edit-client {
+  &__title {
+    @include m.flex(center, flex-start, 10px);
+  }
+
+  &__header-actions {
+    @include m.flex(center, flex-end, 8px);
+    flex-wrap: wrap;
+  }
+}

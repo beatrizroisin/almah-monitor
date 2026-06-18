@@ -1,0 +1,38 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.mtabbar {
+  display: none;
+
+  @include m.tablet {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: t.$mobile-tabbar-h;
+    background: t.$bg-primary;
+    border-top: 1px solid t.$border;
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  &__item {
+    flex: 1;
+    @include m.flex(center, center, 2px);
+    flex-direction: column;
+    font-size: 10px;
+    color: t.$text-tertiary;
+    padding-top: 6px;
+
+    svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    &--active {
+      color: t.$blue;
+      font-weight: 600;
+    }
+  }
+}

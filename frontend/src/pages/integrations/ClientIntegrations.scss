@@ -1,0 +1,22 @@
+@use '../../styles/tokens' as t;
+@use '../../styles/mixins' as m;
+
+.client-integrations {
+  &__title {
+    @include m.flex(center, flex-start, 10px);
+  }
+
+  &__info {
+    margin-bottom: 12px;
+  }
+
+  &__btn-row {
+    @include m.flex(center, flex-start, 8px);
+    margin-top: 12px;
+  }
+}
+
+.mono-input {
+  font-family: t.$font-mono !important;
+  font-size: 12px !important;
+}
