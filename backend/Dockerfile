@@ -9,8 +9,8 @@ RUN npm install
 
 COPY . .
 RUN npx prisma generate
-RUN npx nest build || true
-RUN test -f dist/main.js && echo "✓ dist/main.js OK" || (echo "✗ FALHOU" && exit 1)
+RUN npx nest build
+RUN ls -la dist/ && test -f dist/main.js && echo "✓ dist/main.js OK" || (echo "✗ FALHOU" && exit 1)
 
 EXPOSE 3000
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
