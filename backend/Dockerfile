@@ -9,9 +9,8 @@ RUN npm install
 
 COPY . .
 RUN npx prisma generate
-RUN npx tsc --project tsconfig.json --noEmitOnError false; exit 0
-
-RUN ls -la dist/ 2>/dev/null && echo "dist existe" || echo "dist NAO existe"
+RUN npm run build
+RUN mkdir -p dist && ls dist/
 
 EXPOSE 3000
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
