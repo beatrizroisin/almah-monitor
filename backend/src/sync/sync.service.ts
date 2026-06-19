@@ -139,6 +139,7 @@ export class SyncService {
   }
 
   async syncAllActiveClients() {
+    await this.cleanupStuckSyncs();
     const clients = await this.prisma.client.findMany({ where: { status: 'ACTIVE', deletedAt: null } });
     for (const c of clients) {
       try {
@@ -147,6 +148,15 @@ export class SyncService {
         // erro já logado e persistido dentro de syncClient — segue para o próximo cliente
       }
     }
+  }
+
+  /** Marca como FAILED qualquer sync preso em RUNNING há mais de 10 minutos (ex: servidor reiniciou). */
+  async cleanupStuckSyncs() {
+    const cutoff = new Date(Date.now() - 10 * 60 * 1000);
+    await this.prisma.syncLog.updateMany({
+      where: { status: 'RUNNING', startedAt: { lt: cutoff } },
+      data: { status: 'FAILED', finishedAt: new Date(), errorMessage: 'Sync interrompido (servidor reiniciado ou timeout).' },
+    });
   }
 
   async getLogs(clientId: string) {
