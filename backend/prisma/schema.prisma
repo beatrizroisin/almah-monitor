@@ -103,8 +103,6 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  clientsAsMediaOwner Client[] @relation("MediaOwner")
-  clientsAsDevOwner   Client[] @relation("DevOwner")
   resolvedAlerts      Alert[]  @relation("ResolvedBy")
   alertComments       AlertComment[]
   manualSyncs         SyncLog[]
@@ -124,8 +122,8 @@ model Client {
   storeUrl           String?      @map("store_url")
   status             ClientStatus @default(PENDING)
   integrationStatus  Json?        @map("integration_status")
-  mediaOwnerId       String?      @map("media_owner_id") @db.Uuid
-  devOwnerId         String?      @map("dev_owner_id") @db.Uuid
+  mediaOwnerName     String?      @map("media_owner_name")
+  devOwnerName       String?      @map("dev_owner_name")
   notes              String?
   lastSyncAt         DateTime?    @map("last_sync_at")
   syncError          String?      @map("sync_error")
@@ -133,9 +131,6 @@ model Client {
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
   deletedAt          DateTime?    @map("deleted_at")
-
-  mediaOwner   User? @relation("MediaOwner", fields: [mediaOwnerId], references: [id])
-  devOwner     User? @relation("DevOwner", fields: [devOwnerId], references: [id])
 
   integrations        Integration[]
   vtexSkus            VtexSku[]

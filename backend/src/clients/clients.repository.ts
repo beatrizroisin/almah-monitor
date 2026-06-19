@@ -26,7 +26,7 @@ export class ClientsRepository {
       skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: { name: 'asc' },
-      include: { integrations: true, mediaOwner: true, devOwner: true },
+      include: { integrations: true },
     });
   }
 
@@ -35,8 +35,6 @@ export class ClientsRepository {
       where: { id },
       include: {
         integrations: true,
-        mediaOwner: true,
-        devOwner: true,
       },
     });
   }

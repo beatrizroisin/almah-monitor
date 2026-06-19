@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsIn, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsIn, MinLength } from 'class-validator';
 
 export class CreateClientDto {
   @IsString()
@@ -20,11 +20,11 @@ export class CreateClientDto {
   @IsOptional()
   store_url?: string;
 
-  @IsUUID()
+  @IsString()
   @IsOptional()
   media_owner_id?: string;
 
-  @IsUUID()
+  @IsString()
   @IsOptional()
   dev_owner_id?: string;
 

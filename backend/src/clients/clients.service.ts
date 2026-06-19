@@ -62,8 +62,8 @@ export class ClientsService {
       storeUrl: dto.store_url,
       notes: dto.notes,
       status: 'PENDING',
-      ...(dto.media_owner_id ? { mediaOwner: { connect: { id: dto.media_owner_id } } } : {}),
-      ...(dto.dev_owner_id ? { devOwner: { connect: { id: dto.dev_owner_id } } } : {}),
+      mediaOwnerName: dto.media_owner_id,
+      devOwnerName: dto.dev_owner_id,
     });
 
     return client;
@@ -80,11 +80,11 @@ export class ClientsService {
     if (dto.notifications) {
       data.notificationConfig = dto.notifications;
     }
-    if ((dto as any).media_owner_id) {
-      data.mediaOwner = { connect: { id: (dto as any).media_owner_id } };
+    if ((dto as any).media_owner_id !== undefined) {
+      data.mediaOwnerName = (dto as any).media_owner_id;
     }
-    if ((dto as any).dev_owner_id) {
-      data.devOwner = { connect: { id: (dto as any).dev_owner_id } };
+    if ((dto as any).dev_owner_id !== undefined) {
+      data.devOwnerName = (dto as any).dev_owner_id;
     }
 
     return this.repo.update(id, data);
@@ -188,7 +188,7 @@ export class ClientsService {
       status: statusLabel(c.status),
       vtexStatus: vtexInt?.status ?? 'PENDING',
       googleStatus: googleInt?.status ?? 'PENDING',
-      mediaOwner: c.mediaOwner?.name ?? '—',
+      mediaOwner: c.mediaOwnerName ?? '—',
       lastSyncLabel: c.lastSyncAt ? this.timeAgo(c.lastSyncAt) : 'Nunca',
     };
   }
@@ -198,7 +198,7 @@ export class ClientsService {
       ...this.toListItem(c),
       storeUrl: c.storeUrl,
       notes: c.notes,
-      devOwner: c.devOwner?.name ?? '—',
+      devOwner: c.devOwnerName ?? '—',
       statusLabel: statusLabel(c.status),
       healthScore: c.integrationStatus?.healthScore ?? 0,
       tone: statusLabel(c.status) === 'Saudável' ? 'green' : statusLabel(c.status) === 'Atenção' ? 'orange' : 'red',
