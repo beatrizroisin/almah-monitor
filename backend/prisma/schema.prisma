@@ -117,8 +117,8 @@ model Client {
   id                 String       @id @default(uuid()) @db.Uuid
   name               String       @db.VarChar(100)
   platform           String       @default("VTEX") @db.VarChar(20)
-  vtexAccount        String       @unique @map("vtex_account") @db.VarChar(100)
-  merchantId         String       @unique @map("merchant_id") @db.VarChar(50)
+  vtexAccount        String       @map("vtex_account") @db.VarChar(100)
+  merchantId         String?      @map("merchant_id") @db.VarChar(50)
   storeUrl           String?      @map("store_url")
   status             ClientStatus @default(PENDING)
   integrationStatus  Json?        @map("integration_status")
