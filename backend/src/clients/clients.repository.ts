@@ -53,7 +53,16 @@ export class ClientsRepository {
     return this.prisma.client.update({ where: { id }, data });
   }
 
-  softDelete(id: string) {
-    return this.prisma.client.update({ where: { id }, data: { deletedAt: new Date(), status: 'INACTIVE' } });
+  async softDelete(id: string) {
+    const client = await this.prisma.client.findUnique({ where: { id } });
+    return this.prisma.client.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        status: 'INACTIVE',
+        vtexAccount: `${client.vtexAccount}_deleted_${id}`,
+        merchantId: client.merchantId ? `${client.merchantId}_deleted_${id}` : client.merchantId,
+      },
+    });
   }
 }
