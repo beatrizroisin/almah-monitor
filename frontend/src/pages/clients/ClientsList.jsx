@@ -12,9 +12,14 @@ import './ClientsList.scss';
 const toneMap = { Crítico: 'red', Atenção: 'orange', Saudável: 'green' };
 
 export function ClientsListPage() {
-  const { clients, fetchClients, loading } = useClientsStore();
+  const { clients, fetchClients, loading, removeClient } = useClientsStore();
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
+
+  async function handleDelete(client) {
+    if (!window.confirm(`Tem certeza que deseja excluir o cliente "${client.name}"? Esta ação não pode ser desfeita.`)) return;
+    await removeClient(client.id);
+  }
 
   useEffect(() => {
     fetchClients();
@@ -58,6 +63,7 @@ export function ClientsListPage() {
         <div className="clients-list__row-actions" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" onClick={() => navigate(`/clientes/${r.id}/editar`)}>Editar</Button>
           <Button size="sm" onClick={() => navigate(`/integracoes/${r.id}`)}>Integrações</Button>
+          <Button size="sm" variant="danger" onClick={() => handleDelete(r)}>Excluir</Button>
         </div>
       ),
     },

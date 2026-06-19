@@ -43,6 +43,11 @@ export const useClientsStore = create((set, get) => ({
     }
   },
 
+  async removeClient(id) {
+    await clientsService.remove(id);
+    set((state) => ({ clients: state.clients.filter((c) => c.id !== id) }));
+  },
+
   async triggerSync(id) {
     await clientsService.triggerSync(id);
     // Re-busca o cliente selecionado se for o mesmo, para refletir o novo status

@@ -125,7 +125,10 @@ export class SyncService {
 
       return { status: 'SUCCESS' };
     } catch (err: any) {
-      this.logger.error(`Sync falhou para cliente ${clientId}: ${err.message}`);
+     const detail = err.response
+        ? `${err.config?.method?.toUpperCase()} ${err.config?.url} → ${err.response?.status} ${JSON.stringify(err.response?.data)}`
+        : err.message;
+      this.logger.error(`Sync falhou para cliente ${clientId}: ${detail}`);
       await this.prisma.client.update({ where: { id: clientId }, data: { status: 'ERROR', syncError: err.message } });
       await this.prisma.syncLog.update({
         where: { id: syncLog.id },
