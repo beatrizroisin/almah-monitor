@@ -99,11 +99,20 @@ export class IntegrationsService {
 
     const encrypted = this.crypto.encrypt({ appKey, appToken });
 
-    await this.prisma.integration.upsert({
-      where: { clientId_type: { clientId, type: 'VTEX' } } as any,
-      update: { credentialsEncrypted: encrypted, status: 'CONNECTED', errorMessage: null },
-      create: { clientId, type: 'VTEX', credentialsEncrypted: encrypted, status: 'CONNECTED' },
+    const existing = await this.prisma.integration.findFirst({
+      where: { clientId, type: 'VTEX' },
     });
+
+    if (existing) {
+      await this.prisma.integration.update({
+        where: { id: existing.id },
+        data: { credentialsEncrypted: encrypted, status: 'CONNECTED', errorMessage: null },
+      });
+    } else {
+      await this.prisma.integration.create({
+        data: { clientId, type: 'VTEX', credentialsEncrypted: encrypted, status: 'CONNECTED' },
+      });
+    }
 
     return result;
   }
@@ -119,7 +128,6 @@ export class IntegrationsService {
     const client = await this.prisma.client.findUnique({ where: { id: clientId } });
     if (!client) throw new NotFoundException('Cliente não encontrado.');
 
-    // state = clientId, para o callback saber a quem associar os tokens
     const url = this.googleOAuth.generateAuthUrl(clientId);
     return { url };
   }
@@ -138,31 +146,38 @@ export class IntegrationsService {
       refresh_token: tokens.refresh_token,
     });
 
-    await this.prisma.integration.upsert({
-      where: { clientId_type: { clientId, type: 'GOOGLE_MERCHANT' } } as any,
-      update: {
-        credentialsEncrypted: encrypted,
-        status: 'CONNECTED',
-        expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
-        errorMessage: null,
-      },
-      create: {
-        clientId,
-        type: 'GOOGLE_MERCHANT',
-        credentialsEncrypted: encrypted,
-        status: 'CONNECTED',
-        expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
-      },
+    const existing = await this.prisma.integration.findFirst({
+      where: { clientId, type: 'GOOGLE_MERCHANT' },
     });
+
+    if (existing) {
+      await this.prisma.integration.update({
+        where: { id: existing.id },
+        data: {
+          credentialsEncrypted: encrypted,
+          status: 'CONNECTED',
+          expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+          errorMessage: null,
+        },
+      });
+    } else {
+      await this.prisma.integration.create({
+        data: {
+          clientId,
+          type: 'GOOGLE_MERCHANT',
+          credentialsEncrypted: encrypted,
+          status: 'CONNECTED',
+          expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+        },
+      });
+    }
 
     return { status: 'CONNECTED' };
   }
 
   async revokeGoogle(clientId: string) {
-    const integration = await this.prisma.integration.findUnique({
-
-      
-      where: { clientId_type: { clientId, type: 'GOOGLE_MERCHANT' } } as any,
+    const integration = await this.prisma.integration.findFirst({
+      where: { clientId, type: 'GOOGLE_MERCHANT' },
     });
     if (!integration) throw new NotFoundException('Integração Google não encontrada.');
     await this.prisma.integration.delete({ where: { id: integration.id } });
