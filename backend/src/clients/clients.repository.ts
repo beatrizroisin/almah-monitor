@@ -41,7 +41,7 @@ export class ClientsRepository {
 
   findByVtexAccountOrMerchantId(vtexAccount: string, merchantId: string) {
     return this.prisma.client.findFirst({
-      where: { OR: [{ vtexAccount }, { merchantId }] },
+      where: { deletedAt: null, OR: [{ vtexAccount }, { merchantId }] },
     });
   }
 
