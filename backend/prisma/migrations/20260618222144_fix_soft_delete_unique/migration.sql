@@ -1,9 +1,14 @@
--- Fix soft-deleted clients that still hold the original vtexAccount/merchantId,
--- blocking re-registration of the same account.
+-- Fix soft-deleted clients that still hold the original vtexAccount/merchantId.
+-- vtex_account is VARCHAR(100): keep up to 55 chars + '_deleted_' (9) + UUID (36) = 100
+-- merchant_id  is VARCHAR(50):  keep up to 37 chars + '_del_' (5)     + 8 chars  = 50
 UPDATE clients
 SET
-  vtex_account = vtex_account || '_deleted_' || id,
-  merchant_id  = CASE WHEN merchant_id IS NOT NULL THEN merchant_id || '_deleted_' || id ELSE NULL END
+  vtex_account = LEFT(vtex_account, 55) || '_deleted_' || id::text,
+  merchant_id  = CASE
+                   WHEN merchant_id IS NOT NULL
+                   THEN LEFT(merchant_id, 37) || '_del_' || LEFT(id::text, 8)
+                   ELSE NULL
+                 END
 WHERE deleted_at IS NOT NULL
   AND vtex_account NOT LIKE '%_deleted_%';
 
