@@ -6,6 +6,7 @@ import { InfoBox } from '../../components/ui/InfoBox';
 import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
 import { integrationsService } from '../../api/integrations.service';
+import { syncService } from '../../api/index';
 import { toast } from '../../components/ui/Toast';
 import './ClientIntegrations.scss';
 
@@ -17,15 +18,34 @@ export function ClientIntegrationsPage() {
   const [vtexAppKey, setVtexAppKey] = useState('');
   const [vtexAppToken, setVtexAppToken] = useState('');
   const [saving, setSaving] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [syncing, setSyncing] = useState(false);
 
   async function load() {
     setLoading(true);
     try {
-      const res = await integrationsService.getByClient(id);
+      const [res, logsRes] = await Promise.all([
+        integrationsService.getByClient(id),
+        syncService.getLogs(id).catch(() => []),
+      ]);
       setData(res);
+      setLogs(logsRes);
       setVtexAppKey(res?.vtex?.appKey || '');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSyncNow() {
+    setSyncing(true);
+    try {
+      await syncService.triggerNow(id);
+      toast('Sync iniciado — atualizando logs...');
+      setTimeout(() => load(), 4000);
+    } catch (err) {
+      toast('Erro ao iniciar sync: ' + (err?.response?.data?.message || err.message));
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -160,6 +180,44 @@ export function ClientIntegrationsPage() {
           </div>
         </div>
       </IntegrationCard>
+
+      <Card>
+        <CardHeader actions={<Button size="sm" loading={syncing} onClick={handleSyncNow}>Sincronizar agora</Button>}>
+          <CardTitle title="Logs de sincronização" subtitle="Últimas 10 execuções" />
+        </CardHeader>
+        {logs.length === 0 ? (
+          <div style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: 13 }}>Nenhum sync registrado.</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                {['Data', 'Status', 'SKUs VTEX', 'Produtos Merchant', 'Erro'].map((h) => (
+                  <th key={h} style={{ padding: '8px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {logs.slice(0, 10).map((log) => (
+                <tr key={log.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <td style={{ padding: '8px 16px', color: 'var(--text-secondary)' }}>
+                    {new Date(log.startedAt).toLocaleString('pt-BR')}
+                  </td>
+                  <td style={{ padding: '8px 16px' }}>
+                    <span style={{ fontWeight: 600, color: log.status === 'SUCCESS' ? 'var(--green-text)' : log.status === 'RUNNING' ? 'var(--orange-text)' : 'var(--red-text)' }}>
+                      {log.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: '8px 16px' }}>{log.vtexSkusCollected ?? '—'}</td>
+                  <td style={{ padding: '8px 16px' }}>{log.merchantProductsCollected ?? '—'}</td>
+                  <td style={{ padding: '8px 16px', color: 'var(--red-text)', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {log.errorMessage || '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
     </div>
   );
 }
