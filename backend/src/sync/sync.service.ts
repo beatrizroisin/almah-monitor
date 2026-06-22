@@ -189,13 +189,15 @@ private mapMerchantStatus(clientId: string, p: any) {
 
     return {
       clientId,
-      offerId: p.offerId ?? '',
+      offerId: (p.offerId ?? '').split('_')[0],
       googleProductId: p.name,
       title: attrs.title ?? null,
       approvalStatus: this.mapApprovalStatus(status),
       shoppingAdsStatus: this.mapDestinationStatus(status, 'SHOPPING_ADS'),
       freeListingsStatus: this.mapDestinationStatus(status, 'FREE_LISTINGS'),
-      issues: status.itemIssues ?? [],
+      issues: (status.destinationStatuses ?? [])
+  .filter((d: any) => d.disapprovedCountries?.length > 0)
+  .map((d: any) => ({ description: this.destinationLabel(d.reportingContext), code: d.reportingContext })),
       destinationStatuses: status.destinationStatuses ?? [],
       googleCreatedAt: status.creationDate ? new Date(status.creationDate) : null,
       googleUpdatedAt: status.lastUpdateDate ? new Date(status.lastUpdateDate) : null,
@@ -204,23 +206,23 @@ private mapMerchantStatus(clientId: string, p: any) {
     };
   }
 
-  private mapApprovalStatus(status: any): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
-    const issues = status.itemIssues ?? [];
-    const hasCritical = issues.some((i: any) =>
-      (i.issueSeverityPerReportingContext ?? []).some((s: any) => s.severity === 'DISAPPROVED'),
-    );
-    if (hasCritical) return 'DISAPPROVED';
+private mapApprovalStatus(status: any): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
+    const destinations = status.destinationStatuses ?? [];
+    const shoppingAds = destinations.find((d: any) => d.reportingContext === 'SHOPPING_ADS');
+
     if (status.googleExpirationDate && new Date(status.googleExpirationDate) < new Date()) return 'EXPIRING';
-    if (issues.length > 0) return 'PENDING';
-    return 'APPROVED';
+    if (!shoppingAds) return 'PENDING';
+    if (shoppingAds.disapprovedCountries?.length > 0) return 'DISAPPROVED';
+    if (shoppingAds.approvedCountries?.length > 0) return 'APPROVED';
+    if (shoppingAds.pendingCountries?.length > 0) return 'PENDING';
+    return 'PENDING';
   }
 
   private mapDestinationStatus(status: any, reportingContext: string): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'UNSPECIFIED' {
     const dest = (status.destinationStatuses ?? []).find((d: any) => d.reportingContext === reportingContext);
     if (!dest) return 'UNSPECIFIED';
-    // Na v1, um destino "aprovado" aparece com approvedCountries preenchido.
-    if (dest.approvedCountries?.length > 0) return 'APPROVED';
     if (dest.disapprovedCountries?.length > 0) return 'DISAPPROVED';
+    if (dest.approvedCountries?.length > 0) return 'APPROVED';
     if (dest.pendingCountries?.length > 0) return 'PENDING';
     return 'UNSPECIFIED';
   }
@@ -238,5 +240,17 @@ private mapMerchantStatus(clientId: string, p: any) {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([label, count]) => ({ label, count }));
+  }
+
+  private destinationLabel(reportingContext: string): string {
+    const labels: Record<string, string> = {
+      SHOPPING_ADS: 'Reprovado no Shopping Ads',
+      FREE_LISTINGS: 'Reprovado em listagens gratuitas',
+      LOCAL_INVENTORY_ADS: 'Reprovado em inventário local',
+      DISPLAY_ADS: 'Reprovado em Display Ads',
+      DEMAND_GEN_ADS: 'Reprovado em Demand Gen',
+      VIDEO_ADS: 'Reprovado em anúncios de vídeo',
+    };
+    return labels[reportingContext] ?? `Reprovado em ${reportingContext}`;
   }
 }
