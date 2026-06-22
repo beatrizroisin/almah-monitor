@@ -43,6 +43,11 @@ export class IntegrationsController {
     return this.service.getGoogleAuthUrl(body.clientId);
   }
 
+  @Post('google/register-gcp/:clientId')
+  registerGcp(@Param('clientId') clientId: string, @Body() body: { developerEmail: string }) {
+    return this.service.registerGcpForClient(clientId, body.developerEmail);
+  }
+
   /**
    * Callback público — o Google redireciona o navegador do usuário
    * diretamente para esta rota (não passa pelo JwtAuthGuard).

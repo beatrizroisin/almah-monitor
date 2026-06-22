@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CryptoService } from './crypto.service';
 import { VtexConnectionService } from '../vtex/vtex-connection.service';
 import { GoogleOAuthService } from '../merchant/google-oauth.service';
+import { MerchantClient } from '../merchant/merchant.client';
 
 @Injectable()
 export class IntegrationsService {
@@ -11,6 +12,7 @@ export class IntegrationsService {
     private crypto: CryptoService,
     private vtexConnection: VtexConnectionService,
     private googleOAuth: GoogleOAuthService,
+    private merchantClient: MerchantClient,
   ) {}
 
   async listAll() {
@@ -187,5 +189,16 @@ export class IntegrationsService {
   async remove(integrationId: string) {
     await this.prisma.integration.delete({ where: { id: integrationId } });
     return { removed: true };
+  }
+
+  async registerGcpForClient(clientId: string, developerEmail: string) {
+    const client = await this.prisma.client.findUnique({ where: { id: clientId } });
+    if (!client) throw new NotFoundException('Cliente não encontrado.');
+
+    const google = await this.prisma.integration.findFirst({ where: { clientId, type: 'GOOGLE_MERCHANT' } });
+    if (!google) throw new NotFoundException('Integração Google não encontrada.');
+
+    const { access_token } = this.crypto.decrypt<{ access_token: string }>(google.credentialsEncrypted);
+    return this.merchantClient.registerGcp(access_token, client.merchantId, developerEmail);
   }
 }

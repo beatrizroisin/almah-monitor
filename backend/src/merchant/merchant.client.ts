@@ -53,4 +53,14 @@ export class MerchantClient {
     });
     return data;
   }
+
+    async registerGcp(accessToken: string, merchantId: string, developerEmail: string) {
+    const headers = await this.authHeader(accessToken);
+    const { data } = await axios.post(
+      `${BASE}/accounts/v1/accounts/${merchantId}/developerRegistration:registerGcp`,
+      { developerEmail },
+      { headers, timeout: 30000 },
+    );
+    return data;
+  }
 }
