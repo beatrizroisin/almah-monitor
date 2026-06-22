@@ -65,6 +65,11 @@ export class IntegrationsController {
     }
   }
 
+  @Get('google/debug-raw/:clientId')
+  async debugRaw(@Param('clientId') clientId: string) {
+    return this.service.debugRawForClient(clientId);
+  }
+
   @Post('google/revoke/:clientId')
   revokeGoogle(@Param('clientId') clientId: string) {
     return this.service.revokeGoogle(clientId);

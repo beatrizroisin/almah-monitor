@@ -201,4 +201,15 @@ export class IntegrationsService {
     const { access_token } = this.crypto.decrypt<{ access_token: string }>(google.credentialsEncrypted);
     return this.merchantClient.registerGcp(access_token, client.merchantId, developerEmail);
   }
+
+  async debugRawForClient(clientId: string) {
+    const client = await this.prisma.client.findUnique({ where: { id: clientId } });
+    if (!client) throw new NotFoundException('Cliente não encontrado.');
+
+    const google = await this.prisma.integration.findFirst({ where: { clientId, type: 'GOOGLE_MERCHANT' } });
+    if (!google) throw new NotFoundException('Integração Google não encontrada.');
+
+    const { access_token } = this.crypto.decrypt<{ access_token: string }>(google.credentialsEncrypted);
+    return this.merchantClient.debugRawProducts(access_token, client.merchantId, 5);
+  }
 }

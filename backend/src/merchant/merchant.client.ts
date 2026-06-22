@@ -53,6 +53,16 @@ export class MerchantClient {
     });
     return data;
   }
+  /** DEBUG temporário — retorna os primeiros N produtos crus, sem nenhum mapeamento */
+  async debugRawProducts(accessToken: string, merchantId: string, pageSize = 5) {
+    const headers = await this.authHeader(accessToken);
+    const { data } = await axios.get(`${BASE}/products/v1/accounts/${merchantId}/products`, {
+      headers,
+      params: { pageSize },
+      timeout: 30000,
+    });
+    return data;
+  }
 
     async registerGcp(accessToken: string, merchantId: string, developerEmail: string) {
     const headers = await this.authHeader(accessToken);
