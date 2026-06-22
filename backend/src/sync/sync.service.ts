@@ -125,14 +125,14 @@ export class SyncService {
 
       return { status: 'SUCCESS' };
     } catch (err: any) {
-     const detail = err.response
+      const detail = err.response
         ? `${err.config?.method?.toUpperCase()} ${err.config?.url} → ${err.response?.status} ${JSON.stringify(err.response?.data)}`
         : err.message;
       this.logger.error(`Sync falhou para cliente ${clientId}: ${detail}`);
-      await this.prisma.client.update({ where: { id: clientId }, data: { status: 'ERROR', syncError: err.message } });
+      await this.prisma.client.update({ where: { id: clientId }, data: { status: 'ERROR', syncError: detail } });
       await this.prisma.syncLog.update({
         where: { id: syncLog.id },
-        data: { status: 'FAILED', finishedAt: new Date(), errorMessage: err.message },
+        data: { status: 'FAILED', finishedAt: new Date(), errorMessage: detail },
       });
       throw err;
     }
@@ -180,38 +180,49 @@ export class SyncService {
     }
   }
 
-  private mapMerchantStatus(clientId: string, p: any) {
-    // Mapeamento conforme doc 03, seção 1.4
-    const offerId = (p.productId ?? '').split(':').pop();
+private mapMerchantStatus(clientId: string, p: any) {
+    // Mapeamento atualizado para Merchant API v1 — o produto vem em
+    // p.productAttributes (título, preço) e p.productStatus (issues, destinos).
+    // offerId já vem direto no produto, sem precisar fazer parse do name.
+    const status = p.productStatus ?? {};
+    const attrs = p.productAttributes ?? {};
+
     return {
       clientId,
-      offerId,
+      offerId: p.offerId ?? '',
       googleProductId: p.name,
-      title: p.title,
-      approvalStatus: this.mapApprovalStatus(p),
-      shoppingAdsStatus: this.mapDestinationStatus(p, 'Shopping'),
-      freeListingsStatus: this.mapDestinationStatus(p, 'FreeListing'),
-      issues: p.itemLevelIssues ?? [],
-      destinationStatuses: p.destinationStatuses ?? [],
-      googleCreatedAt: p.creationDate ? new Date(p.creationDate) : null,
-      googleUpdatedAt: null,
-      expirationDate: p.googleExpirationDate ? new Date(p.googleExpirationDate) : null,
+      title: attrs.title ?? null,
+      approvalStatus: this.mapApprovalStatus(status),
+      shoppingAdsStatus: this.mapDestinationStatus(status, 'SHOPPING_ADS'),
+      freeListingsStatus: this.mapDestinationStatus(status, 'FREE_LISTINGS'),
+      issues: status.itemIssues ?? [],
+      destinationStatuses: status.destinationStatuses ?? [],
+      googleCreatedAt: status.creationDate ? new Date(status.creationDate) : null,
+      googleUpdatedAt: status.lastUpdateDate ? new Date(status.lastUpdateDate) : null,
+      expirationDate: status.googleExpirationDate ? new Date(status.googleExpirationDate) : null,
       collectedAt: new Date(),
     };
   }
 
-  private mapApprovalStatus(p: any): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
-    const issues = p.itemLevelIssues ?? [];
-    if (issues.some((i: any) => i.severity === 'critical')) return 'DISAPPROVED';
-    if (p.googleExpirationDate && new Date(p.googleExpirationDate) < new Date()) return 'EXPIRING';
+  private mapApprovalStatus(status: any): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
+    const issues = status.itemIssues ?? [];
+    const hasCritical = issues.some((i: any) =>
+      (i.issueSeverityPerReportingContext ?? []).some((s: any) => s.severity === 'DISAPPROVED'),
+    );
+    if (hasCritical) return 'DISAPPROVED';
+    if (status.googleExpirationDate && new Date(status.googleExpirationDate) < new Date()) return 'EXPIRING';
     if (issues.length > 0) return 'PENDING';
     return 'APPROVED';
   }
 
-  private mapDestinationStatus(p: any, destination: string): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'UNSPECIFIED' {
-    const dest = (p.destinationStatuses ?? []).find((d: any) => d.destination === destination);
+  private mapDestinationStatus(status: any, reportingContext: string): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'UNSPECIFIED' {
+    const dest = (status.destinationStatuses ?? []).find((d: any) => d.reportingContext === reportingContext);
     if (!dest) return 'UNSPECIFIED';
-    return dest.status?.toUpperCase() ?? 'UNSPECIFIED';
+    // Na v1, um destino "aprovado" aparece com approvedCountries preenchido.
+    if (dest.approvedCountries?.length > 0) return 'APPROVED';
+    if (dest.disapprovedCountries?.length > 0) return 'DISAPPROVED';
+    if (dest.pendingCountries?.length > 0) return 'PENDING';
+    return 'UNSPECIFIED';
   }
 
   private extractTopCauses(products: any[]) {
@@ -219,7 +230,7 @@ export class SyncService {
     for (const p of products) {
       const issues = Array.isArray(p.issues) ? p.issues : [];
       for (const issue of issues) {
-        const label = issue.description ?? 'Outro problema';
+        const label = issue.title ?? issue.description ?? issue.code ?? 'Outro problema';
         counter[label] = (counter[label] ?? 0) + 1;
       }
     }
