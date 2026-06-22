@@ -10,12 +10,13 @@ export function Button({
   icon = null,
   type = 'button',
   onClick,
+  className = '',
   ...rest
 }) {
   return (
     <button
       type={type}
-      className={`btn btn--${variant} btn--${size} ${fullWidth ? 'btn--full' : ''}`}
+      className={`btn btn--${variant} btn--${size} ${fullWidth ? 'btn--full' : ''} ${className}`.trim()}
       disabled={disabled || loading}
       onClick={onClick}
       {...rest}
