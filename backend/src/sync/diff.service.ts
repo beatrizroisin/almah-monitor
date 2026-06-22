@@ -12,8 +12,25 @@ interface MerchantProductLite {
 // Espelha doc 03, seção 3 — Cruzamento VTEX × Merchant
 @Injectable()
 export class DiffService {
-  classify(vtexSkus: VtexSkuLite[], merchantProducts: MerchantProductLite[]) {
-    const merchantByOfferId = new Map(merchantProducts.map((m) => [m.offerId, m]));
+classify(vtexSkus: VtexSkuLite[], merchantProducts: MerchantProductLite[]) {
+    // Pode haver múltiplos registros de merchant_products para o mesmo offerId
+    // (ex: múltiplas fontes de dados/idiomas cadastrados no Merchant Center).
+    // Nesses casos, priorizamos sempre o status mais severo, para nunca
+    // esconder um problema real de aprovação.
+    const severityOrder: Record<string, number> = {
+      DISAPPROVED: 3,
+      EXPIRING: 2,
+      PENDING: 1,
+      APPROVED: 0,
+    };
+
+    const merchantByOfferId = new Map<string, MerchantProductLite>();
+    for (const m of merchantProducts) {
+      const existing = merchantByOfferId.get(m.offerId);
+      if (!existing || severityOrder[m.approvalStatus] > severityOrder[existing.approvalStatus]) {
+        merchantByOfferId.set(m.offerId, m);
+      }
+    }
 
     let approved = 0;
     let disapproved = 0;
@@ -47,7 +64,7 @@ export class DiffService {
 
     return {
       totalVtexSkus: vtexSkus.filter((s) => s.isActive).length,
-      totalMerchantSkus: merchantProducts.length,
+      totalMerchantSkus: merchantByOfferId.size,
       approvedSkus: approved,
       disapprovedSkus: disapproved,
       pendingSkus: pending,
