@@ -50,10 +50,12 @@ export class SkusService {
       .filter(Boolean);
   }
 
-  async listMissing(clientId: string) {
-    // SKUs ativos na VTEX cujo offer_id não existe em merchant_products
+async listMissing(clientId: string) {
+    // SKUs ativos na VTEX cujo offer_id não existe em merchant_products.
+    // Sem `take` aqui — precisamos varrer o catálogo inteiro para detectar
+    // corretamente todos os SKUs ausentes, não só uma amostra.
     const [vtexSkus, merchantOfferIds] = await Promise.all([
-      this.prisma.vtexSku.findMany({ where: { clientId, isActive: true }, take: 1000 }),
+      this.prisma.vtexSku.findMany({ where: { clientId, isActive: true } }),
       this.prisma.merchantProduct.findMany({ where: { clientId }, select: { offerId: true } }),
     ]);
 
