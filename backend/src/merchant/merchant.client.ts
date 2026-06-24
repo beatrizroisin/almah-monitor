@@ -114,4 +114,33 @@ export class MerchantClient {
     );
     return data;
   }
+
+  /** DEBUG temporário — varre todas as páginas e retorna só os não-ELIGIBLE */
+  async debugFindNonEligible(accessToken: string, merchantId: string) {
+    const headers = await this.authHeader(accessToken);
+    const query =
+      'SELECT offer_id, id, title, aggregated_reporting_context_status, item_issues FROM product_view';
+    const found: any[] = [];
+    let pageToken: string | undefined;
+    let totalScanned = 0;
+
+    do {
+      const { data } = await axios.post(
+        `${BASE}/reports/v1/accounts/${merchantId}/reports:search`,
+        { query, pageSize: 1000, pageToken },
+        { headers, timeout: 30000 },
+      );
+      const results = data.results ?? [];
+      totalScanned += results.length;
+      for (const r of results) {
+        const status = r.productView?.aggregatedReportingContextStatus;
+        if (status !== 'ELIGIBLE') {
+          found.push(r.productView);
+        }
+      }
+      pageToken = data.nextPageToken;
+    } while (pageToken);
+
+    return { totalScanned, totalFound: found.length, found };
+  }
 }

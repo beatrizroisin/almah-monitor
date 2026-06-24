@@ -84,4 +84,9 @@ export class IntegrationsController {
   async debugReport(@Param('clientId') clientId: string) {
     return this.service.debugReportForClient(clientId);
   }
+
+  @Get('google/debug-noneligible/:clientId')
+  async debugNonEligible(@Param('clientId') clientId: string) {
+    return this.service.debugNonEligibleForClient(clientId);
+  }
 }
