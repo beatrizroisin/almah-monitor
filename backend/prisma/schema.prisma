@@ -46,6 +46,7 @@ enum IntegrationStatus {
 
 enum ApprovalStatus {
   APPROVED
+  LIMITED
   DISAPPROVED
   PENDING
   EXPIRING
@@ -117,8 +118,8 @@ model Client {
   id                 String       @id @default(uuid()) @db.Uuid
   name               String       @db.VarChar(100)
   platform           String       @default("VTEX") @db.VarChar(20)
-  vtexAccount        String       @map("vtex_account") @db.VarChar(100)
-  merchantId         String?      @map("merchant_id") @db.VarChar(50)
+  vtexAccount        String       @unique @map("vtex_account") @db.VarChar(100)
+  merchantId         String       @unique @map("merchant_id") @db.VarChar(50)
   storeUrl           String?      @map("store_url")
   status             ClientStatus @default(PENDING)
   integrationStatus  Json?        @map("integration_status")
@@ -227,6 +228,7 @@ model SkuHealthSnapshot {
   totalVtexSkus      Int      @default(0) @map("total_vtex_skus")
   totalMerchantSkus  Int      @default(0) @map("total_merchant_skus")
   approvedSkus       Int      @default(0) @map("approved_skus")
+  limitedSkus        Int      @default(0) @map("limited_skus")
   disapprovedSkus    Int      @default(0) @map("disapproved_skus")
   pendingSkus        Int      @default(0) @map("pending_skus")
   expiredSkus        Int      @default(0) @map("expired_skus")

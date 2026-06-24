@@ -123,6 +123,7 @@ export class ClientsService {
       merchantSkus: latestSnapshot?.totalMerchantSkus ?? 0,
       missingSkus: latestSnapshot?.missingSkus ?? 0,
       approvedToday: latestSnapshot?.approvedSkus ?? 0,
+      limitedSkus: latestSnapshot?.limitedSkus ?? 0,
       approvedYesterday: yesterday?.approvedSkus ?? 0,
       problemsCount: (latestSnapshot?.disapprovedSkus ?? 0) + (latestSnapshot?.expiredSkus ?? 0),
       dropPctLabel: latestSnapshot?.deltaApprovedPct ? `${latestSnapshot.deltaApprovedPct}%` : '—',

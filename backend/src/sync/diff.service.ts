@@ -6,20 +6,21 @@ interface VtexSkuLite {
 }
 interface MerchantProductLite {
   offerId: string;
-  approvalStatus: 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING';
+  approvalStatus: 'APPROVED' | 'LIMITED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING';
 }
 
 // Espelha doc 03, seção 3 — Cruzamento VTEX × Merchant
 @Injectable()
 export class DiffService {
-classify(vtexSkus: VtexSkuLite[], merchantProducts: MerchantProductLite[]) {
+  classify(vtexSkus: VtexSkuLite[], merchantProducts: MerchantProductLite[]) {
     // Pode haver múltiplos registros de merchant_products para o mesmo offerId
     // (ex: múltiplas fontes de dados/idiomas cadastrados no Merchant Center).
     // Nesses casos, priorizamos sempre o status mais severo, para nunca
     // esconder um problema real de aprovação.
     const severityOrder: Record<string, number> = {
-      DISAPPROVED: 3,
-      EXPIRING: 2,
+      DISAPPROVED: 4,
+      EXPIRING: 3,
+      LIMITED: 2,
       PENDING: 1,
       APPROVED: 0,
     };
@@ -33,6 +34,7 @@ classify(vtexSkus: VtexSkuLite[], merchantProducts: MerchantProductLite[]) {
     }
 
     let approved = 0;
+    let limited = 0;
     let disapproved = 0;
     let pending = 0;
     let expired = 0;
@@ -50,6 +52,9 @@ classify(vtexSkus: VtexSkuLite[], merchantProducts: MerchantProductLite[]) {
         case 'APPROVED':
           approved += 1;
           break;
+        case 'LIMITED':
+          limited += 1;
+          break;
         case 'DISAPPROVED':
           disapproved += 1;
           break;
@@ -66,6 +71,7 @@ classify(vtexSkus: VtexSkuLite[], merchantProducts: MerchantProductLite[]) {
       totalVtexSkus: vtexSkus.filter((s) => s.isActive).length,
       totalMerchantSkus: merchantByOfferId.size,
       approvedSkus: approved,
+      limitedSkus: limited,
       disapprovedSkus: disapproved,
       pendingSkus: pending,
       expiredSkus: expired,

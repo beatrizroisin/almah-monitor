@@ -65,7 +65,7 @@ export class SyncService {
 
       await this.persistVtexSkus(clientId, vtexSkusForDb);
 
-      // ── Coleta Merchant ──
+      // ── Coleta Merchant (via Reports API — fonte oficial de status agregado) ──
       let { access_token, refresh_token } = this.crypto.decrypt<{ access_token: string; refresh_token: string }>(
         googleIntegration.credentialsEncrypted,
       );
@@ -82,8 +82,8 @@ export class SyncService {
         });
       }
 
-      const productStatuses = await this.merchantClient.getProductStatuses(access_token, client.merchantId);
-      const merchantProductsForDb = productStatuses.map((p: any) => this.mapMerchantStatus(clientId, p));
+      const productViews = await this.merchantClient.getProductView(access_token, client.merchantId);
+      const merchantProductsForDb = productViews.map((p: any) => this.mapProductView(clientId, p));
       await this.persistMerchantProducts(clientId, merchantProductsForDb);
 
       // ── Snapshot + diff ──
@@ -180,51 +180,55 @@ export class SyncService {
     }
   }
 
-private mapMerchantStatus(clientId: string, p: any) {
-    // Mapeamento atualizado para Merchant API v1 — o produto vem em
-    // p.productAttributes (título, preço) e p.productStatus (issues, destinos).
-    // offerId já vem direto no produto, sem precisar fazer parse do name.
-    const status = p.productStatus ?? {};
-    const attrs = p.productAttributes ?? {};
-
+  /**
+   * Mapeia uma linha de product_view (Reports API) para o formato salvo em
+   * merchant_products. offer_id pode vir como "SKUID_SKUID" — extraímos só
+   * a primeira parte, que é o skuId real da VTEX.
+   */
+  private mapProductView(clientId: string, p: any) {
+    const offerId = (p.offerId ?? '').split('_')[0];
     return {
       clientId,
-      offerId: (p.offerId ?? '').split('_')[0],
-      googleProductId: p.name,
-      title: attrs.title ?? null,
-      approvalStatus: this.mapApprovalStatus(status),
-      shoppingAdsStatus: this.mapDestinationStatus(status, 'SHOPPING_ADS'),
-      freeListingsStatus: this.mapDestinationStatus(status, 'FREE_LISTINGS'),
-      issues: (status.destinationStatuses ?? [])
-  .filter((d: any) => d.disapprovedCountries?.length > 0)
-  .map((d: any) => ({ description: this.destinationLabel(d.reportingContext), code: d.reportingContext })),
-      destinationStatuses: status.destinationStatuses ?? [],
-      googleCreatedAt: status.creationDate ? new Date(status.creationDate) : null,
-      googleUpdatedAt: status.lastUpdateDate ? new Date(status.lastUpdateDate) : null,
-      expirationDate: status.googleExpirationDate ? new Date(status.googleExpirationDate) : null,
+      offerId,
+      googleProductId: p.id,
+      title: p.title ?? null,
+      approvalStatus: this.mapApprovalStatus(p.aggregatedReportingContextStatus),
+      shoppingAdsStatus: this.mapApprovalStatus(p.aggregatedReportingContextStatus),
+      freeListingsStatus: 'UNSPECIFIED' as const,
+      issues: (p.itemIssues ?? []).map((i: any) => ({
+        code: i.type?.code,
+        description: i.type?.canonicalAttribute ?? i.type?.code ?? 'Problema no produto',
+      })),
+      destinationStatuses: [],
+      googleCreatedAt: null,
+      googleUpdatedAt: null,
+      expirationDate: null,
       collectedAt: new Date(),
     };
   }
 
-private mapApprovalStatus(status: any): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
-    const destinations = status.destinationStatuses ?? [];
-    const shoppingAds = destinations.find((d: any) => d.reportingContext === 'SHOPPING_ADS');
-
-    if (status.googleExpirationDate && new Date(status.googleExpirationDate) < new Date()) return 'EXPIRING';
-    if (!shoppingAds) return 'PENDING';
-    if (shoppingAds.disapprovedCountries?.length > 0) return 'DISAPPROVED';
-    if (shoppingAds.approvedCountries?.length > 0) return 'APPROVED';
-    if (shoppingAds.pendingCountries?.length > 0) return 'PENDING';
-    return 'PENDING';
-  }
-
-  private mapDestinationStatus(status: any, reportingContext: string): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'UNSPECIFIED' {
-    const dest = (status.destinationStatuses ?? []).find((d: any) => d.reportingContext === reportingContext);
-    if (!dest) return 'UNSPECIFIED';
-    if (dest.disapprovedCountries?.length > 0) return 'DISAPPROVED';
-    if (dest.approvedCountries?.length > 0) return 'APPROVED';
-    if (dest.pendingCountries?.length > 0) return 'PENDING';
-    return 'UNSPECIFIED';
+  /**
+   * aggregated_reporting_context_status (Reports API) mapeado para o nosso
+   * enum interno. Valores possíveis do Google:
+   * ELIGIBLE | ELIGIBLE_LIMITED | NOT_ELIGIBLE_OR_DISAPPROVED | PENDING
+   *
+   * ELIGIBLE_LIMITED ("Limitado" no painel do Google) é tratado como
+   * categoria própria — não é nem aprovado nem reprovado, mas sim um produto
+   * com visibilidade restrita em alguns países/contextos.
+   */
+  private mapApprovalStatus(status: string): 'APPROVED' | 'LIMITED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
+    switch (status) {
+      case 'ELIGIBLE':
+        return 'APPROVED';
+      case 'ELIGIBLE_LIMITED':
+        return 'LIMITED';
+      case 'NOT_ELIGIBLE_OR_DISAPPROVED':
+        return 'DISAPPROVED';
+      case 'PENDING':
+        return 'PENDING';
+      default:
+        return 'PENDING';
+    }
   }
 
   private extractTopCauses(products: any[]) {
@@ -232,7 +236,7 @@ private mapApprovalStatus(status: any): 'APPROVED' | 'DISAPPROVED' | 'PENDING' |
     for (const p of products) {
       const issues = Array.isArray(p.issues) ? p.issues : [];
       for (const issue of issues) {
-        const label = issue.title ?? issue.description ?? issue.code ?? 'Outro problema';
+        const label = issue.description ?? issue.code ?? 'Outro problema';
         counter[label] = (counter[label] ?? 0) + 1;
       }
     }
@@ -240,17 +244,5 @@ private mapApprovalStatus(status: any): 'APPROVED' | 'DISAPPROVED' | 'PENDING' |
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([label, count]) => ({ label, count }));
-  }
-
-  private destinationLabel(reportingContext: string): string {
-    const labels: Record<string, string> = {
-      SHOPPING_ADS: 'Reprovado no Shopping Ads',
-      FREE_LISTINGS: 'Reprovado em listagens gratuitas',
-      LOCAL_INVENTORY_ADS: 'Reprovado em inventário local',
-      DISPLAY_ADS: 'Reprovado em Display Ads',
-      DEMAND_GEN_ADS: 'Reprovado em Demand Gen',
-      VIDEO_ADS: 'Reprovado em anúncios de vídeo',
-    };
-    return labels[reportingContext] ?? `Reprovado em ${reportingContext}`;
   }
 }

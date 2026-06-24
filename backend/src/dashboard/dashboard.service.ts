@@ -15,6 +15,7 @@ export class DashboardService {
 
     let totalVtexSkus = 0;
     let totalApprovedSkus = 0;
+    let totalLimitedSkus = 0;
     let totalMissingSkus = 0;
     let totalDisapproved = 0;
     let totalPending = 0;
@@ -24,6 +25,7 @@ export class DashboardService {
       const snap = c.healthSnapshots[0];
       totalVtexSkus += snap?.totalVtexSkus ?? 0;
       totalApprovedSkus += snap?.approvedSkus ?? 0;
+      totalLimitedSkus += snap?.limitedSkus ?? 0;
       totalMissingSkus += snap?.missingSkus ?? 0;
       totalDisapproved += snap?.disapprovedSkus ?? 0;
       totalPending += snap?.pendingSkus ?? 0;
@@ -40,8 +42,9 @@ export class DashboardService {
         vtexSkus: snap?.totalVtexSkus ?? 0,
         merchantSkus: snap?.totalMerchantSkus ?? 0,
         approvedSkus: snap?.approvedSkus ?? 0,
+        limitedSkus: snap?.limitedSkus ?? 0,
         disapprovedSkus: snap?.disapprovedSkus ?? 0,
-        variation: snap?.deltaApprovedPct ? `${Number(snap.deltaApprovedPct) > 0 ? '+' : ''}${snap.deltaApprovedPct}%` : '—',
+        variation: snap?.deltaApprovedPct ? `${snap.deltaApprovedPct > 0 ? '+' : ''}${snap.deltaApprovedPct}%` : '—',
         status: statusLabel,
       };
     });
@@ -54,11 +57,15 @@ export class DashboardService {
       clientsInAlert,
       totalVtexSkus,
       totalApprovedSkus,
+      totalLimitedSkus,
       totalMissingSkus,
       totalDisapproved,
       totalPending,
       missingPct: totalVtexSkus > 0 ? ((totalMissingSkus / totalVtexSkus) * 100).toFixed(1) : '0',
-      totalOutsideShopping: Math.round(totalMissingSkus * 1.35), // estimativa — ver doc 1 (Shopping Ads)
+      // "Fora do Shopping Ads" = reprovados no Shopping (já contabilizado em
+      // totalDisapproved, pois approvalStatus reflete o status agregado, que
+      // por decisão de produto é calculado com base no destino Shopping Ads).
+      totalOutsideShopping: totalDisapproved,
       criticalAlertsCount,
       alertsSummaryLabel: `${criticalAlertsCount} críticos, ${orangeAlertsCount} atenção`,
       lastSyncLabel: new Date().toLocaleString('pt-BR'),
@@ -74,7 +81,7 @@ export class DashboardService {
   async getTopCauses(params: { clientId?: string } = {}) {
     const products = await this.prisma.merchantProduct.findMany({
       where: {
-        approvalStatus: { in: ['DISAPPROVED', 'EXPIRING'] },
+        approvalStatus: { in: ['DISAPPROVED', 'EXPIRING', 'LIMITED'] },
         ...(params.clientId ? { clientId: params.clientId } : {}),
       },
       select: { issues: true },
