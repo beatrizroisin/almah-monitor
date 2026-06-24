@@ -97,10 +97,11 @@ export function ClientDetailPage() {
         </div>
       </div>
 
-      <MetricsGrid>
+      <MetricsGrid columns={5}>
         <Metric label="SKUs ativos na VTEX" value={(dash.vtexSkus ?? 0).toLocaleString('pt-BR')} />
         <Metric label="SKUs no Merchant" value={(dash.merchantSkus ?? 0).toLocaleString('pt-BR')} delta={`${dash.missingSkus ?? 0} ausentes`} deltaDirection="down" />
         <Metric label="Aprovados hoje" value={(dash.approvedToday ?? 0).toLocaleString('pt-BR')} valueColor="var(--red)" delta={`vs ${dash.approvedYesterday ?? 0} ontem`} deltaDirection="down" />
+        <Metric label="Limitados" value={(dash.limitedSkus ?? 0).toLocaleString('pt-BR')} valueColor="var(--orange)" delta="visibilidade restrita" />
         <Metric label="Queda 24h" value={dash.dropPctLabel ?? '—'} valueColor="var(--red)" delta={`${dash.dropAbsoluteLabel ?? ''}`} deltaDirection="down" />
       </MetricsGrid>
 

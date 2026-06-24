@@ -11,6 +11,10 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  &--5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
   @include m.tablet {
     grid-template-columns: repeat(2, 1fr);
   }

@@ -7,8 +7,12 @@ export class SkusController {
   constructor(private service: SkusService) {}
 
   @Get('skus/problematic')
-  listProblematic(@Query('clientId') clientId?: string, @Query('issueType') issueType?: string) {
-    return this.service.listProblematic({ clientId, issueType });
+  listProblematic(
+    @Query('clientId') clientId?: string,
+    @Query('issueType') issueType?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.service.listProblematic({ clientId, issueType, status });
   }
 
   @Get('clients/:clientId/skus/missing')
@@ -30,8 +34,8 @@ export class SkusController {
   }
 
   @Get('skus/export')
-  async exportCsv(@Query('clientId') clientId: string, @Res() res: Response) {
-    const csv = await this.service.exportCsvRows({ clientId });
+  async exportCsv(@Query('clientId') clientId: string, @Query('status') status: string, @Res() res: Response) {
+    const csv = await this.service.exportCsvRows({ clientId, status });
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="skus-problematicos.csv"');
     res.send(csv);

@@ -8,18 +8,37 @@ const issueTypeLabels: Record<string, string> = {
   expired: 'Produto expirado',
 };
 
+const statusLabels: Record<string, string> = {
+  DISAPPROVED: 'Reprovado',
+  EXPIRING: 'Expirado',
+  LIMITED: 'Limitado',
+};
+
+const severityLabels: Record<string, string> = {
+  DISAPPROVED: 'Crítico',
+  EXPIRING: 'Alto',
+  LIMITED: 'Médio',
+};
+
 @Injectable()
 export class SkusService {
   constructor(private prisma: PrismaService) {}
 
-  async listProblematic(params: { clientId?: string; issueType?: string }) {
+  /**
+   * status: filtra por approval_status — por padrão mostra DISAPPROVED +
+   * EXPIRING (problemas que tiram o produto do Shopping Ads). Passar
+   * status='LIMITED' para ver só os produtos com visibilidade restrita.
+   */
+  async listProblematic(params: { clientId?: string; issueType?: string; status?: string }) {
+    const statusFilter = params.status ? [params.status] : ['DISAPPROVED', 'EXPIRING'];
+
     const products = await this.prisma.merchantProduct.findMany({
       where: {
-        approvalStatus: { in: ['DISAPPROVED', 'EXPIRING'] },
+        approvalStatus: { in: statusFilter as any },
         ...(params.clientId ? { clientId: params.clientId } : {}),
       },
       include: { client: true },
-      take: 500,
+      take: 1000,
       orderBy: { collectedAt: 'desc' },
     });
 
@@ -29,7 +48,7 @@ export class SkusService {
       .map((p) => {
         const vtexSku = vtexByOfferId[p.offerId];
         const issues = Array.isArray(p.issues) ? (p.issues as any[]) : [];
-        const issueLabel = issueTypeLabels[issues[0]?.code] ?? issues[0]?.description ?? 'Reprovado';
+        const issueLabel = issueTypeLabels[issues[0]?.code] ?? issues[0]?.description ?? statusLabels[p.approvalStatus] ?? 'Reprovado';
         if (params.issueType && issues[0]?.code !== params.issueType) return null;
 
         return {
@@ -41,8 +60,8 @@ export class SkusService {
           productName: p.title ?? vtexSku?.name ?? '—',
           brand: vtexSku?.brand ?? '—',
           issue: issueLabel,
-          statusLabel: p.approvalStatus === 'DISAPPROVED' ? 'Reprovado' : 'Expirado',
-          severity: p.approvalStatus === 'DISAPPROVED' ? 'Crítico' : 'Alto',
+          statusLabel: statusLabels[p.approvalStatus] ?? p.approvalStatus,
+          severity: severityLabels[p.approvalStatus] ?? 'Médio',
           isActiveVtex: vtexSku?.isActive ?? true,
           platform: 'vtex',
         };
@@ -50,7 +69,7 @@ export class SkusService {
       .filter(Boolean);
   }
 
-async listMissing(clientId: string) {
+  async listMissing(clientId: string) {
     // SKUs ativos na VTEX cujo offer_id não existe em merchant_products.
     // Sem `take` aqui — precisamos varrer o catálogo inteiro para detectar
     // corretamente todos os SKUs ausentes, não só uma amostra.
@@ -84,7 +103,7 @@ async listMissing(clientId: string) {
     });
   }
 
-  async exportCsvRows(params: { clientId?: string }) {
+  async exportCsvRows(params: { clientId?: string; status?: string }) {
     const rows = await this.listProblematic(params);
     const header = 'cliente,sku_id,produto,marca,problema,status,severidade\n';
     const body = rows
