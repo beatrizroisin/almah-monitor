@@ -79,4 +79,9 @@ export class IntegrationsController {
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }
+
+  @Get('google/debug-report/:clientId')
+  async debugReport(@Param('clientId') clientId: string) {
+    return this.service.debugReportForClient(clientId);
+  }
 }

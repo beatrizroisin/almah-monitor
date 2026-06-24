@@ -102,4 +102,16 @@ export class MerchantClient {
     );
     return data;
   }
+
+  async debugRawProductView(accessToken: string, merchantId: string, pageSize = 50) {
+    const headers = await this.authHeader(accessToken);
+    const query =
+      'SELECT offer_id, id, title, aggregated_reporting_context_status, item_issues FROM product_view';
+    const { data } = await axios.post(
+      `${BASE}/reports/v1/accounts/${merchantId}/reports:search`,
+      { query, pageSize },
+      { headers, timeout: 30000 },
+    );
+    return data;
+  }
 }
