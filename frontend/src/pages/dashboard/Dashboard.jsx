@@ -93,14 +93,14 @@ export function DashboardPage() {
 
       <MetricsGrid>
         <Metric label="Reprovados" value={overview.totalDisapproved.toLocaleString('pt-BR')} valueColor="var(--red)" delta={overview.disapprovedDeltaLabel} deltaDirection="down" />
-        <Metric label="Limitados" value={overview.totalLimitedSkus.toLocaleString('pt-BR')} valueColor="var(--orange)" delta="visibilidade restrita" />
+        <Metric label="Limitados" value={(overview.totalLimitedSkus ?? 0).toLocaleString('pt-BR')} valueColor="var(--orange)" delta="visibilidade restrita" />
         <Metric label="Pendentes" value={overview.totalPending.toLocaleString('pt-BR')} valueColor="var(--orange)" delta="aguardando revisão" />
         <Metric label="Alertas críticos" value={overview.criticalAlertsCount} valueColor="var(--red)" delta={overview.alertsSummaryLabel} />
       </MetricsGrid>
 
       <MetricsGrid columns={2}>
         <Metric label="Fora do Shopping Ads" value={overview.totalOutsideShopping.toLocaleString('pt-BR')} valueColor="var(--red)" delta="reprovados no Shopping Ads" />
-        <Metric label="SKUs únicos no Merchant" value={overview.clients.reduce((s, c) => s + (c.merchantSkus || 0), 0).toLocaleString('pt-BR')} delta="total coletado na última sync" />
+        <Metric label="SKUs únicos no Merchant" value={(overview.clients ?? []).reduce((s, c) => s + (c.merchantSkus || 0), 0).toLocaleString('pt-BR')} delta="total coletado na última sync" />
       </MetricsGrid>
 
       <Card>
