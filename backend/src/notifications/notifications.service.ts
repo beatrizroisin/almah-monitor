@@ -74,4 +74,27 @@ export class NotificationsService {
   buildAlertMessage(clientName: string, affectedSkus: number, dropPct: number, mainCauses: string[]) {
     return `ALERTA CRÍTICO — Cliente ${clientName} perdeu ${affectedSkus} SKUs aprovados no Google Merchant nas últimas 24h. Queda de ${dropPct}%. Principais causas: ${mainCauses.join(', ')}. Ação urgente recomendada.`;
   }
+
+  async dispatchCriticalAlert(clientName: string, affectedSkus: number, dropPct: number, mainCauses: string[]) {
+    const config = await this.getGlobalConfig();
+    const message = this.buildAlertMessage(clientName, affectedSkus, dropPct, mainCauses);
+
+    const tasks: Promise<any>[] = [];
+
+    if (config.emailEnabled && config.emailAddress) {
+      tasks.push(
+        this.sendEmail(
+          config.emailAddress,
+          `[ALMAH Monitor] Alerta crítico — ${clientName}`,
+          `<p>${message}</p>`,
+        ),
+      );
+    }
+
+    if (config.discordEnabled && config.discordWebhook) {
+      tasks.push(this.sendDiscord(config.discordWebhook, message));
+    }
+
+    return Promise.allSettled(tasks);
+  }
 }
