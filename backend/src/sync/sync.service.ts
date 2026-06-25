@@ -193,7 +193,7 @@ export class SyncService {
       googleProductId: p.id,
       title: p.title ?? null,
       approvalStatus: this.mapApprovalStatus(p.aggregatedReportingContextStatus),
-      shoppingAdsStatus: this.mapApprovalStatus(p.aggregatedReportingContextStatus),
+      shoppingAdsStatus: this.mapDestinationStatus(p.aggregatedReportingContextStatus),
       freeListingsStatus: 'UNSPECIFIED' as const,
       issues: (p.itemIssues ?? []).map((i: any) => ({
         code: i.type?.code,
@@ -216,6 +216,22 @@ export class SyncService {
    * categoria própria — não é nem aprovado nem reprovado, mas sim um produto
    * com visibilidade restrita em alguns países/contextos.
    */
+  // DestinationStatus enum (Prisma) não tem LIMITED — produtos "limitados" ainda
+  // aparecem no Shopping Ads, só com alcance restrito, por isso mapeamos para APPROVED.
+  private mapDestinationStatus(status: string): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'UNSPECIFIED' {
+    switch (status) {
+      case 'ELIGIBLE':
+      case 'ELIGIBLE_LIMITED':
+        return 'APPROVED';
+      case 'NOT_ELIGIBLE_OR_DISAPPROVED':
+        return 'DISAPPROVED';
+      case 'PENDING':
+        return 'PENDING';
+      default:
+        return 'UNSPECIFIED';
+    }
+  }
+
   private mapApprovalStatus(status: string): 'APPROVED' | 'LIMITED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
     switch (status) {
       case 'ELIGIBLE':
