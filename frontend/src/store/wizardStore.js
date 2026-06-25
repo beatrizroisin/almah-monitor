@@ -137,9 +137,10 @@ export const useWizardStore = create((set, get) => ({
   async checkGoogleStatus() {
     const s = get();
     try {
-      const status = await integrationsService.checkGoogleCallbackStatus(s.clientId);
-      const connected = status?.status === 'CONNECTED';
-      set({ googleConnected: connected, googleSummary: status });
+      const data = await integrationsService.checkGoogleCallbackStatus(s.clientId);
+      const google = data?.google;
+      const connected = google?.status === 'CONNECTED';
+      set({ googleConnected: connected, googleSummary: google });
       return connected;
     } catch {
       return false;

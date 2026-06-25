@@ -323,3 +323,12 @@ model ClientSkuPriority {
 
   @@map("client_sku_priorities")
 }
+
+
+model Setting {
+  key       String   @id @db.VarChar(100)
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

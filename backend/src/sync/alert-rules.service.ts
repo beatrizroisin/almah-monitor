@@ -48,7 +48,7 @@ export class AlertRulesService {
       s.mainCauses.map((c) => c.label),
     );
 
-    return this.prisma.alert.create({
+    const alert = await this.prisma.alert.create({
       data: {
         clientId: s.clientId,
         severity: 'RED',
@@ -60,6 +60,23 @@ export class AlertRulesService {
         status: 'OPEN',
       },
     });
+
+    // Alertas vermelhos (críticos) disparam notificação externa de verdade —
+    // e-mail e/ou Discord, conforme configurado em Notificações. Erros no
+    // envio não devem impedir o alerta de ter sido registrado no painel,
+    // então isolamos com try/catch em vez de deixar a exceção subir.
+    try {
+      await this.notifications.dispatchCriticalAlert(
+        s.clientName,
+        s.approvedYesterday - s.approvedSkus,
+        Math.abs(s.deltaApprovedPct),
+        s.mainCauses.map((c) => c.label),
+      );
+    } catch (err) {
+      console.error('Falha ao despachar notificação externa do alerta crítico:', err);
+    }
+
+    return alert;
   }
 
   async fireOrange(s: SnapshotComparison) {
