@@ -82,13 +82,12 @@ export function WizardStep1() {
           <SectionLabel>Responsáveis internos Almah</SectionLabel>
           <FormGrid>
             <Field label="Responsável de mídia">
-              <select value={wizard.mediaOwnerId} onChange={(e) => wizard.setField('mediaOwnerId', e.target.value)}>
-                <option value="">Selecionar</option>
-                <option value="ana-paula">Ana Paula Silva</option>
-                <option value="rafael-lima">Rafael Lima</option>
-                <option value="carlos-mota">Carlos Mota</option>
-                <option value="mariana-costa">Mariana Costa</option>
-              </select>
+              <input
+                type="text"
+                value={wizard.mediaOwnerId}
+                onChange={(e) => wizard.setField('mediaOwnerId', e.target.value)}
+                placeholder="Nome do colaborador"
+              />
             </Field>
             <Field label="Responsável técnico (dev)">
               <select value={wizard.devOwnerId} onChange={(e) => wizard.setField('devOwnerId', e.target.value)}>

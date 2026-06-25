@@ -66,6 +66,12 @@
       display: none;
     }
   }
+
+  &__logout-btn span:last-child {
+    @include m.mobile {
+      display: none;
+    }
+  }
 }
 
 @keyframes topbar-pulse {
