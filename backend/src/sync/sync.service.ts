@@ -171,6 +171,19 @@ export class SyncService {
         create: sku,
       });
     }
+
+    // Qualquer SKU que já esteve no banco mas não veio nesta coleta
+    // (excluído/desativado na VTEX) precisa parar de contar como ativo,
+    // senão a contagem do sistema diverge da VTEX com o tempo.
+    // Só roda se a coleta trouxe algo — uma lista vazia normalmente indica
+    // falha/timeout da VTEX, não um catálogo zerado, e não deve apagar tudo.
+    if (skus.length > 0) {
+      const currentSkuIds = skus.map((s) => s.skuId);
+      await this.prisma.vtexSku.updateMany({
+        where: { clientId, isActive: true, skuId: { notIn: currentSkuIds } },
+        data: { isActive: false },
+      });
+    }
   }
 
   private async persistMerchantProducts(clientId: string, products: any[]) {
