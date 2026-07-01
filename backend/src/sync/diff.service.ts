@@ -46,16 +46,30 @@ export class DiffService {
     let expired = 0;
     let missing = 0;
 
-    for (const sku of vtexSkus) {
+for (const sku of vtexSkus) {
       if (!sku.isActive) continue;
-      // Cruza pelo productId da VTEX — os feeds do Google Shopping usam o ID
-      // do produto como offer_id, não o ID da variante (SKU).
-      const product = merchantByOfferId.get(sku.productId);
+
+      // CRUZAMENTO INTELIGENTE (Cascata de buscas):
+      
+      // Tentativa 1: O Feed agrupa por Produto Pai (Comum em moda/móveis)
+      let product = merchantByOfferId.get(sku.productId);
+      
+      // Tentativa 2: O Feed envia SKU por SKU 1:1
+      if (!product) {
+        product = merchantByOfferId.get(sku.skuId);
+      }
+      
+      // Tentativa 3: O Feed envia um ID composto "ProductId_SkuId"
+      if (!product) {
+        product = merchantByOfferId.get(`${sku.productId}_${sku.skuId}`);
+      }
 
       if (!product) {
         missing += 1;
-        continue;
+        continue; // Não achou de jeito nenhum, então está ausente
       }
+
+      // Se achou, o SKU herda o status
       switch (product.approvalStatus) {
         case 'APPROVED':
           approved += 1;

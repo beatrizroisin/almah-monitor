@@ -30,22 +30,33 @@ export class MerchantClient {
    * - só disapprovedCountries → DISAPPROVED
    * - só pendingCountries ou vazio → PENDING
    */
-  async getProductStatuses(accessToken: string, merchantId: string) {
+async getProductStatuses(accessToken: string, merchantId: string) {
     const headers = await this.authHeader(accessToken);
     const results: any[] = [];
     let pageToken: string | undefined;
 
+    // Esta query pega TODOS os produtos, o status agregado e a lista de erros (issues)
+    const query = `
+      SELECT 
+        offer_id, 
+        title, 
+        aggregated_reporting_context_status, 
+        item_level_issues 
+      FROM product_view
+    `;
+
     do {
-      const { data } = await axios.get(`${BASE}/products/v1/accounts/${merchantId}/products`, {
-        headers,
-        params: { pageSize: 1000, pageToken },
-        timeout: 30000,
-      });
-      results.push(...(data.products ?? []));
+      const { data } = await axios.post(
+        `${BASE}/reports/v1/accounts/${merchantId}/reports:search`,
+        { query, pageSize: 1000, pageToken },
+        { headers, timeout: 30000 },
+      );
+      results.push(...(data.results ?? []));
       pageToken = data.nextPageToken;
     } while (pageToken);
 
-    return results;
+    // Retorna a estrutura correta extraindo o node 'productView'
+    return results.map((r) => r.productView);
   }
 
   /**

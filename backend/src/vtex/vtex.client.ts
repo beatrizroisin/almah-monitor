@@ -18,7 +18,7 @@ export class VtexClient {
     });
   }
 
-  /** Pagina /sku/stockkeepingunitids até retornar array vazio. PageSize=1000. */
+/** Pagina /sku/stockkeepingunitids até retornar array vazio. PageSize=1000. */
   async listActiveSkuIds(vtexAccount: string, appKey: string, appToken: string): Promise<number[]> {
     const http = this.client(vtexAccount, appKey, appToken);
     const ids: number[] = [];
@@ -28,11 +28,17 @@ export class VtexClient {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const { data } = await http.get('/api/catalog_system/pvt/sku/stockkeepingunitids', {
-        params: { IsActive: true, page, pagesize: pageSize },
+        params: { page, pagesize: pageSize }, // Removido o IsActive, a VTEX ignora aqui.
       });
+      
+      // Se não for array ou vier vazio, acabou de verdade.
       if (!Array.isArray(data) || data.length === 0) break;
+      
       ids.push(...data);
-      if (data.length < pageSize) break;
+      
+      // REMOVIDO: if (data.length < pageSize) break;
+      // Motivo: A VTEX entrega lotes "quebrados" (ex: 924 itens) mesmo havendo mais páginas.
+      
       page += 1;
     }
     return ids;

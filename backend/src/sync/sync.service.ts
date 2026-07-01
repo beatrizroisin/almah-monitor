@@ -195,22 +195,38 @@ export class SyncService {
    *
    * offer_id pode vir como "SKUID_SKUID" — extraímos só a primeira parte.
    */
-  private mapProductView(clientId: string, p: any) {
-    const offerId = (p.offerId ?? '').split('_')[0];
-    const approvalStatus = this.deriveApprovalStatus(p.status?.destinationStatuses ?? []);
+private mapProductView(clientId: string, p: any) {
+    // 1. NÃO FAÇA split('_')[0]! Mantenha o offerId original para o DiffService achar.
+    const offerId = p.offerId ?? ''; 
+    
+    // 2. Mapeamento direto e oficial de status da Reports API
+    let approvalStatus: 'APPROVED' | 'LIMITED' | 'DISAPPROVED' | 'PENDING' = 'PENDING';
+    const apiStatus = p.aggregatedReportingContextStatus;
+    
+    if (apiStatus === 'ELIGIBLE' || apiStatus === 'APPROVED') {
+      approvalStatus = 'APPROVED';
+    } else if (apiStatus === 'ELIGIBLE_LIMITED') {
+      approvalStatus = 'LIMITED';
+    } else if (apiStatus === 'NOT_ELIGIBLE_OR_DISAPPROVED' || apiStatus === 'DISAPPROVED') {
+      approvalStatus = 'DISAPPROVED';
+    }
+
+    // 3. Preparando os erros para as suas validações de regras (imagem, preço, etc)
+    const issues = (p.itemLevelIssues ?? []).map((i: any) => ({
+      code: i.code,
+      description: i.detail ?? i.description ?? 'Problema no produto',
+      attributeName: i.attribute ?? null // Aqui virá se o erro é no 'image_link', 'price', etc.
+    }));
 
     return {
       clientId,
       offerId,
-      googleProductId: p.name ?? null,
+      googleProductId: p.title ?? null,
       title: p.title ?? null,
       approvalStatus,
-      shoppingAdsStatus: approvalStatus === 'LIMITED' ? 'APPROVED' : approvalStatus === 'EXPIRING' ? 'APPROVED' : approvalStatus,
+      shoppingAdsStatus: approvalStatus,
       freeListingsStatus: 'UNSPECIFIED' as const,
-      issues: (p.status?.itemLevelIssues ?? []).map((i: any) => ({
-        code: i.code,
-        description: i.description ?? i.detail ?? i.code ?? 'Problema no produto',
-      })),
+      issues,
       destinationStatuses: [],
       googleCreatedAt: null,
       googleUpdatedAt: null,
