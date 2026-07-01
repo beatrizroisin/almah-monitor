@@ -212,10 +212,14 @@ private mapProductView(clientId: string, p: any) {
     }
 
     // 3. Preparando os erros para as suas validações de regras (imagem, preço, etc)
-    const issues = (p.itemLevelIssues ?? []).map((i: any) => ({
-      code: i.code,
+// 3. Preparando os erros para as suas validações de regras (imagem, preço, etc)
+    // Na Reports API, a coluna 'item_issues' retorna no JSON como 'itemIssues'.
+    const issues = (p.itemIssues ?? []).map((i: any) => ({
+      // O código do erro geralmente vem dentro de i.type.code na Reports API
+      code: i.type?.code ?? i.code ?? 'UNKNOWN',
       description: i.detail ?? i.description ?? 'Problema no produto',
-      attributeName: i.attribute ?? null // Aqui virá se o erro é no 'image_link', 'price', etc.
+      // O nome do atributo (ex: image_link) vem dentro de type.attribute
+      attributeName: i.type?.attribute ?? i.attribute ?? null 
     }));
 
     return {

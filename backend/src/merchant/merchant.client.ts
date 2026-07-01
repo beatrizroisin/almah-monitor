@@ -35,13 +35,13 @@ async getProductStatuses(accessToken: string, merchantId: string) {
     const results: any[] = [];
     let pageToken: string | undefined;
 
-    // Esta query pega TODOS os produtos, o status agregado e a lista de erros (issues)
+// Esta query pega TODOS os produtos, o status agregado e a lista de erros (issues)
     const query = `
       SELECT 
         offer_id, 
         title, 
         aggregated_reporting_context_status, 
-        item_level_issues 
+        item_issues 
       FROM product_view
     `;
 
