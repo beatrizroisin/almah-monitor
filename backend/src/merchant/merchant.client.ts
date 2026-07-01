@@ -93,7 +93,7 @@ export class MerchantClient {
     return data;
   }
 
-  /** DEBUG temporário — retorna os primeiros N produtos crus, sem nenhum mapeamento */
+  /** DEBUG — retorna os primeiros N produtos crus da Products API */
   async debugRawProducts(accessToken: string, merchantId: string, pageSize = 5) {
     const headers = await this.authHeader(accessToken);
     const { data } = await axios.get(`${BASE}/products/v1/accounts/${merchantId}/products`, {
@@ -101,6 +101,32 @@ export class MerchantClient {
       params: { pageSize },
       timeout: 30000,
     });
+    return data;
+  }
+
+  /** DEBUG — retorna primeiros N resultados da Reports API (product_view) */
+  async debugRawProductView(accessToken: string, merchantId: string, pageSize = 50) {
+    const headers = await this.authHeader(accessToken);
+    const query =
+      'SELECT offer_id, id, title, aggregated_reporting_context_status, item_issues FROM product_view';
+    const { data } = await axios.post(
+      `${BASE}/reports/v1/accounts/${merchantId}/reports:search`,
+      { query, pageSize },
+      { headers, timeout: 30000 },
+    );
+    return data;
+  }
+
+  /** DEBUG — retorna produtos com status NOT_ELIGIBLE_OR_DISAPPROVED */
+  async debugFindNonEligible(accessToken: string, merchantId: string) {
+    const headers = await this.authHeader(accessToken);
+    const query =
+      "SELECT offer_id, id, title, aggregated_reporting_context_status, item_issues FROM product_view WHERE aggregated_reporting_context_status = 'NOT_ELIGIBLE_OR_DISAPPROVED'";
+    const { data } = await axios.post(
+      `${BASE}/reports/v1/accounts/${merchantId}/reports:search`,
+      { query, pageSize: 100 },
+      { headers, timeout: 30000 },
+    );
     return data;
   }
 
