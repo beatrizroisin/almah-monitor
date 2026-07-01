@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 interface VtexSkuLite {
   skuId: string;
+  productId: string;
   isActive: boolean;
 }
 interface MerchantProductLite {
@@ -10,6 +11,11 @@ interface MerchantProductLite {
 }
 
 // Espelha doc 03, seção 3 — Cruzamento VTEX × Merchant
+//
+// IMPORTANTE: o cruzamento é feito pelo productId da VTEX (não pelo skuId),
+// porque os feeds de Google Shopping geralmente usam o ID do produto como
+// offer_id — não a variante (SKU). Múltiplos SKUs do mesmo produto herdam
+// o status do produto no Merchant Center.
 @Injectable()
 export class DiffService {
   classify(vtexSkus: VtexSkuLite[], merchantProducts: MerchantProductLite[]) {
@@ -42,7 +48,9 @@ export class DiffService {
 
     for (const sku of vtexSkus) {
       if (!sku.isActive) continue;
-      const product = merchantByOfferId.get(sku.skuId);
+      // Cruza pelo productId da VTEX — os feeds do Google Shopping usam o ID
+      // do produto como offer_id, não o ID da variante (SKU).
+      const product = merchantByOfferId.get(sku.productId);
 
       if (!product) {
         missing += 1;
