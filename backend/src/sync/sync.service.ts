@@ -235,13 +235,18 @@ private mapProductView(clientId: string, p: any) {
       attributeName: i.type?.attribute ?? i.attribute ?? null 
     }));
 
+    // shoppingAdsStatus usa o enum DestinationStatus (APPROVED/DISAPPROVED/PENDING/UNSPECIFIED),
+    // que não tem o valor LIMITED do ApprovalStatus — sem esse mapeamento o createMany
+    // rejeita o lote inteiro quando qualquer produto vier LIMITED.
+    const shoppingAdsStatus = approvalStatus === 'LIMITED' ? 'APPROVED' : approvalStatus;
+
     return {
       clientId,
       offerId,
       googleProductId: p.title ?? null,
       title: p.title ?? null,
       approvalStatus,
-      shoppingAdsStatus: approvalStatus,
+      shoppingAdsStatus,
       freeListingsStatus: 'UNSPECIFIED' as const,
       issues,
       destinationStatuses: [],
