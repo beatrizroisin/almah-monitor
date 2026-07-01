@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -10,41 +10,54 @@ interface SnapshotComparison {
   deltaApprovedPct: number;
   missingSkus: number;
   totalVtexSkus: number;
-  vtexConnectorStale: boolean; // sem atualização recente
+  vtexConnectorStale: boolean;
   mainCauses: { label: string; count: number }[];
 }
 
 @Injectable()
 export class AlertRulesService {
+  private readonly logger = new Logger(AlertRulesService.name);
+
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
   ) {}
 
-  /** Regras do doc 1, seção 6 — Alerta vermelho — crítico */
+  /** Regras do doc 1, seção 6 — Alerta vermelho — crítico
+   *
+   * ATENÇÃO: missingPct foi removida como critério isolado de alerta vermelho.
+   * Clientes novos ou com catálogo parcial no Merchant naturalmente têm muitos
+   * SKUs "ausentes" — isso não é uma queda crítica, é estado normal do negócio.
+   * O alerta só dispara quando há queda real de aprovados em relação a ontem,
+   * ou quando o conector VTEX parou de sincronizar.
+   */
   private isRedAlert(s: SnapshotComparison) {
+    // Só avalia queda se havia dados ontem — evita falso positivo no primeiro sync
+    const hadDataYesterday = s.approvedYesterday > 0;
     const dropPct = Math.abs(s.deltaApprovedPct);
-    const missingPct = s.totalVtexSkus > 0 ? (s.missingSkus / s.totalVtexSkus) * 100 : 0;
+    const dropAbsolute = s.approvedYesterday - s.approvedSkus;
+
     return (
-      dropPct > 10 ||
-      s.approvedYesterday - s.approvedSkus > 100 ||
       s.vtexConnectorStale ||
-      missingPct > 20
+      (hadDataYesterday && dropPct > 10) ||
+      (hadDataYesterday && dropAbsolute > 100)
     );
   }
 
   /** Regras do doc 1, seção 6 — Alerta laranja — atenção */
   private isOrangeAlert(s: SnapshotComparison) {
+    const hadDataYesterday = s.approvedYesterday > 0;
     const dropPct = Math.abs(s.deltaApprovedPct);
-    return dropPct >= 3 && dropPct <= 10;
+    return hadDataYesterday && dropPct >= 3 && dropPct <= 10;
   }
 
   async fireRed(s: SnapshotComparison) {
-    const causesLabel = s.mainCauses.map((c) => c.label).join(', ');
+    const affectedSkus = s.approvedYesterday - s.approvedSkus;
+    const dropPct = Math.abs(s.deltaApprovedPct);
     const message = this.notifications.buildAlertMessage(
       s.clientName,
-      s.approvedYesterday - s.approvedSkus,
-      Math.abs(s.deltaApprovedPct),
+      affectedSkus,
+      dropPct,
       s.mainCauses.map((c) => c.label),
     );
 
@@ -54,26 +67,29 @@ export class AlertRulesService {
         severity: 'RED',
         title: 'Queda crítica de SKUs aprovados',
         message,
-        affectedSkusCount: s.approvedYesterday - s.approvedSkus,
+        affectedSkusCount: affectedSkus,
         mainCauses: s.mainCauses,
         ruleCode: 'DROP_GT_10_PCT',
         status: 'OPEN',
       },
     });
 
-    // Alertas vermelhos (críticos) disparam notificação externa de verdade —
-    // e-mail e/ou Discord, conforme configurado em Notificações. Erros no
-    // envio não devem impedir o alerta de ter sido registrado no painel,
-    // então isolamos com try/catch em vez de deixar a exceção subir.
+    // Disparar notificação externa (Discord + e-mail) com log detalhado
     try {
-      await this.notifications.dispatchCriticalAlert(
+      const results = await this.notifications.dispatchCriticalAlert(
         s.clientName,
-        s.approvedYesterday - s.approvedSkus,
-        Math.abs(s.deltaApprovedPct),
+        affectedSkus,
+        dropPct,
         s.mainCauses.map((c) => c.label),
       );
+      // Promise.allSettled — loga canais que falharam individualmente
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          this.logger.error(`Canal ${i} falhou ao enviar alerta: ${r.reason}`);
+        }
+      });
     } catch (err) {
-      console.error('Falha ao despachar notificação externa do alerta crítico:', err);
+      this.logger.error(`Falha ao despachar notificação externa do alerta crítico: ${err}`);
     }
 
     return alert;

@@ -31,10 +31,10 @@ export function ClientDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (tab === 'missing' && id) {
+    if (id) {
       skusService.listMissing(id).then((data) => setMissingSkus(data.items ?? data));
     }
-  }, [tab, id]);
+  }, [id]);
 
   async function handleSync() {
     setSyncing(true);
@@ -73,6 +73,7 @@ export function ClientDetailPage() {
     { key: 'skuId', header: 'SKU ID', primary: true, render: (r) => <span className="mono">{r.skuId}</span> },
     { key: 'productName', header: 'Produto', render: (r) => <span className="fw">{r.productName}</span> },
     { key: 'category', header: 'Categoria' },
+    { key: 'reason', header: 'Motivo', render: (r) => <Tag color={r.reason?.startsWith('Inativo') ? 'gray' : 'orange'}>{r.reason}</Tag> },
     { key: 'actions', header: 'Ação', render: (r) => <Button size="sm" onClick={() => handleReprocess(r)}>Reprocessar</Button> },
   ];
 
@@ -99,7 +100,7 @@ export function ClientDetailPage() {
 
       <MetricsGrid columns={5}>
         <Metric label="SKUs ativos na VTEX" value={(dash.vtexSkus ?? 0).toLocaleString('pt-BR')} />
-        <Metric label="SKUs no Merchant" value={(dash.merchantSkus ?? 0).toLocaleString('pt-BR')} delta={`${dash.missingSkus ?? 0} ausentes`} deltaDirection="down" />
+        <Metric label="SKUs no Merchant" value={(dash.merchantSkus ?? 0).toLocaleString('pt-BR')} delta={`${missingSkus.length} ausentes`} deltaDirection="down" />
         <Metric label="Aprovados hoje" value={(dash.approvedToday ?? 0).toLocaleString('pt-BR')} valueColor="var(--red)" delta={`vs ${dash.approvedYesterday ?? 0} ontem`} deltaDirection="down" />
         <Metric label="Limitados" value={(dash.limitedSkus ?? 0).toLocaleString('pt-BR')} valueColor="var(--orange)" delta="visibilidade restrita" />
         <Metric label="Queda 24h" value={dash.dropPctLabel ?? '—'} valueColor="var(--red)" delta={`${dash.dropAbsoluteLabel ?? ''}`} deltaDirection="down" />
@@ -109,7 +110,7 @@ export function ClientDetailPage() {
         <Tabs
           tabs={[
             { key: 'problems', label: `Problemas (${dash.problemsCount ?? 0})` },
-            { key: 'missing', label: `Ausentes (${dash.missingSkus ?? 0})` },
+            { key: 'missing', label: `Ausentes (${missingSkus.length})` },
             { key: 'alert', label: 'Alerta ativo' },
           ]}
           active={tab}
@@ -123,8 +124,8 @@ export function ClientDetailPage() {
         {tab === 'missing' && (
           <CardBody>
             <InfoBox tone="blue" className="client-detail__missing-info">
-              {dash.missingSkus ?? 0} SKUs ativos na VTEX não foram encontrados no Google Merchant Center.
-              Possível falha no conector VTEX Google ou SKU nunca enviado.
+              {missingSkus.length} SKUs da VTEX não foram encontrados no Google Merchant Center — veja o motivo em cada linha:
+              inativos na VTEX, ou ativos mas nunca enviados ao feed do Merchant.
             </InfoBox>
             <ResponsiveTable columns={missingColumns} rows={missingSkus} rowKey="id" emptyLabel="Nenhum SKU ausente." />
           </CardBody>

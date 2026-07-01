@@ -70,11 +70,13 @@ export class SkusService {
   }
 
   async listMissing(clientId: string) {
-    // SKUs ativos na VTEX cujo offer_id não existe em merchant_products.
+    // Todo o catálogo VTEX (ativo + inativo) cujo offer_id não existe em
+    // merchant_products — inclui os inativos para explicar o motivo real da
+    // ausência, e não só os que estão ativos e não foram enviados ao feed.
     // Sem `take` aqui — precisamos varrer o catálogo inteiro para detectar
     // corretamente todos os SKUs ausentes, não só uma amostra.
     const [vtexSkus, merchantOfferIds] = await Promise.all([
-      this.prisma.vtexSku.findMany({ where: { clientId, isActive: true } }),
+      this.prisma.vtexSku.findMany({ where: { clientId } }),
       this.prisma.merchantProduct.findMany({ where: { clientId }, select: { offerId: true } }),
     ]);
 
@@ -86,6 +88,7 @@ export class SkusService {
         skuId: s.skuId,
         productName: s.name,
         category: s.category ?? '—',
+        reason: s.isActive ? 'Ativo na VTEX, mas não enviado ao Google Merchant' : 'Inativo na VTEX',
       }));
   }
 
