@@ -1,6 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+// Produtos e valores em BR usam vírgula (ex: "1,95X1,35"), então todo campo
+// precisa ir entre aspas — senão a vírgula do próprio texto quebra as colunas do CSV.
+function csvEscape(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value);
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
 const issueTypeLabels: Record<string, string> = {
   price_mismatch: 'Preço divergente',
   invalid_image: 'Imagem inválida',
@@ -48,7 +55,7 @@ export class SkusService {
       .map((p) => {
         const vtexSku = vtexByOfferId[p.offerId];
         const issues = Array.isArray(p.issues) ? (p.issues as any[]) : [];
-        const issueLabel = issueTypeLabels[issues[0]?.code] ?? issues[0]?.description ?? statusLabels[p.approvalStatus] ?? 'Reprovado';
+        const issueLabel = issues[0]?.description ?? issueTypeLabels[issues[0]?.code] ?? statusLabels[p.approvalStatus] ?? 'Reprovado';
         if (params.issueType && issues[0]?.code !== params.issueType) return null;
 
         return {
@@ -110,9 +117,15 @@ export class SkusService {
     const rows = await this.listProblematic(params);
     const header = 'cliente,sku_id,produto,marca,problema,status,severidade\n';
     const body = rows
-      .map((r: any) => [r.clientName, r.skuId, r.productName, r.brand, r.issue, r.statusLabel, r.severity].join(','))
+      .map((r: any) =>
+        [r.clientName, r.skuId, r.productName, r.brand, r.issue, r.statusLabel, r.severity]
+          .map(csvEscape)
+          .join(','),
+      )
       .join('\n');
-    return header + body;
+    const BOM = String.fromCharCode(0xfeff);
+    // BOM para o Excel reconhecer UTF-8 (acentos) ao abrir o CSV direto.
+    return BOM + header + body;
   }
 
   private async indexVtexSkus(offerIds: string[]) {

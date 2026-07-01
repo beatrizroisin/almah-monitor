@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import './Topbar.scss';
 
-export function Topbar({ title, onSync, syncing = false, lastSyncLabel = 'Sincronizado há 8min' }) {
+export function Topbar({ title, onSync, syncing = false, lastSyncLabel = 'Carregando...' }) {
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
 

@@ -52,6 +52,11 @@ export class DashboardService {
     const criticalAlertsCount = await this.prisma.alert.count({ where: { severity: 'RED', status: 'OPEN' } });
     const orangeAlertsCount = await this.prisma.alert.count({ where: { severity: 'ORANGE', status: 'OPEN' } });
 
+    const lastSyncAt = clients.reduce((latest: Date | null, c) => {
+      if (!c.lastSyncAt) return latest;
+      return !latest || c.lastSyncAt > latest ? c.lastSyncAt : latest;
+    }, null as Date | null);
+
     return {
       totalClients: clients.length,
       clientsInAlert,
@@ -68,7 +73,8 @@ export class DashboardService {
       totalOutsideShopping: totalDisapproved,
       criticalAlertsCount,
       alertsSummaryLabel: `${criticalAlertsCount} críticos, ${orangeAlertsCount} atenção`,
-      lastSyncLabel: new Date().toLocaleString('pt-BR'),
+      lastSyncAt: lastSyncAt ? lastSyncAt.toISOString() : null,
+      lastSyncLabel: lastSyncAt ? lastSyncAt.toLocaleString('pt-BR') : 'Nenhuma sincronização ainda',
       vtexDeltaLabel: '',
       vtexDeltaDirection: undefined,
       approvedDeltaLabel: '',

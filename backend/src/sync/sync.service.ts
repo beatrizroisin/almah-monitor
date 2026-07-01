@@ -7,6 +7,43 @@ import { GoogleOAuthService } from '../merchant/google-oauth.service';
 import { SnapshotService } from './snapshot.service';
 import { AlertRulesService } from './alert-rules.service';
 
+// Mapeamento dos códigos de issue do Google Merchant Center (item_issues[].type.code)
+// para descrições em PT-BR. A Reports API não devolve texto explicativo, só o código —
+// por isso os não mapeados caem no fallback humanizado do próprio código (nunca num
+// texto genérico), pra sempre expor o problema real do produto.
+const MERCHANT_ISSUE_DESCRIPTIONS: Record<string, string> = {
+  image_link: 'Imagem do produto ausente, inválida ou fora do ar',
+  landing_page_crawling_not_allowed: 'Página de destino bloqueada para rastreamento do Google (robots.txt)',
+  page_not_crawlable: 'Página de destino não pôde ser rastreada pelo Google',
+  landing_page_error: 'Erro ao acessar a página de destino do produto',
+  price_mismatch: 'Preço enviado ao Merchant diverge do preço exibido no site',
+  availability_mismatch: 'Disponibilidade enviada ao Merchant diverge da disponibilidade real no site',
+  shipping_could_not_be_calculated: 'Não foi possível calcular o frete do produto',
+  missing_shipping: 'Informação de frete ausente',
+  missing_tax: 'Informação de imposto ausente',
+  gtin_invalid: 'GTIN inválido ou em formato incorreto',
+  gtin_missing: 'GTIN ausente',
+  mpn_invalid: 'MPN inválido ou em formato incorreto',
+  identifier_exists_incorrect: 'Identificador do produto (GTIN/MPN/marca) incorreto',
+  title_missing: 'Título do produto ausente',
+  description_missing: 'Descrição do produto ausente',
+  condition_mismatch: 'Condição do produto (novo/usado) divergente',
+  brand_missing: 'Marca do produto ausente',
+  misrepresentation: 'Informações do produto consideradas enganosas pelo Google',
+  policy_violation: 'Produto violando políticas do Google Merchant Center',
+  disapproved_by_merchant_center: 'Produto reprovado manualmente no Merchant Center',
+  duplicate_image: 'Imagem duplicada de outro produto',
+  promotional_overlay: 'Imagem com selo ou texto promocional não permitido',
+  missing_required_attribute: 'Atributo obrigatório ausente no feed',
+};
+
+function describeMerchantIssue(code: string, attributeName: string | null): string {
+  const known = MERCHANT_ISSUE_DESCRIPTIONS[code];
+  if (known) return known;
+  const humanized = code.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  return attributeName ? `${humanized} (${attributeName})` : humanized;
+}
+
 @Injectable()
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
@@ -227,13 +264,17 @@ private mapProductView(clientId: string, p: any) {
     // 3. Preparando os erros para as suas validações de regras (imagem, preço, etc)
 // 3. Preparando os erros para as suas validações de regras (imagem, preço, etc)
     // Na Reports API, a coluna 'item_issues' retorna no JSON como 'itemIssues'.
-    const issues = (p.itemIssues ?? []).map((i: any) => ({
+    const issues = (p.itemIssues ?? []).map((i: any) => {
       // O código do erro geralmente vem dentro de i.type.code na Reports API
-      code: i.type?.code ?? i.code ?? 'UNKNOWN',
-      description: i.detail ?? i.description ?? 'Problema no produto',
+      const code = i.type?.code ?? i.code ?? 'UNKNOWN';
       // O nome do atributo (ex: image_link) vem dentro de type.attribute
-      attributeName: i.type?.attribute ?? i.attribute ?? null 
-    }));
+      const attributeName = i.type?.attribute ?? i.attribute ?? null;
+      return {
+        code,
+        description: i.detail ?? i.description ?? describeMerchantIssue(code, attributeName),
+        attributeName,
+      };
+    });
 
     // shoppingAdsStatus usa o enum DestinationStatus (APPROVED/DISAPPROVED/PENDING/UNSPECIFIED),
     // que não tem o valor LIMITED do ApprovalStatus — sem esse mapeamento o createMany

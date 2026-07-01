@@ -10,6 +10,18 @@ function timeAgo(date: Date) {
   return `Há ${Math.floor(hours / 24)} dias`;
 }
 
+/** Formata "01/07/2026 às 18:30" (padrão BR), no fuso America/Sao_Paulo. */
+function formatBrDateTime(date: Date) {
+  const d = new Date(date);
+  const datePart = d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const timePart = d.toLocaleTimeString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${datePart} às ${timePart}`;
+}
+
 @Injectable()
 export class AlertsService {
   constructor(private prisma: PrismaService) {}
@@ -36,6 +48,8 @@ export class AlertsService {
       clientId: a.clientId,
       clientName: a.client?.name,
       timeAgo: timeAgo(a.createdAt),
+      resolvedAt: a.resolvedAt,
+      resolvedAtLabel: a.resolvedAt ? formatBrDateTime(a.resolvedAt) : null,
     }));
   }
 

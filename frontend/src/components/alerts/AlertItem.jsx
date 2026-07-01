@@ -27,7 +27,7 @@ export function AlertItem({ alert, onResolve, onViewClient, compact = false }) {
         </div>
         {!compact && <div className="alert-item__desc">{alert.message}</div>}
         <div className="alert-item__meta">
-          {alert.timeAgo}
+          {resolved && alert.resolvedAtLabel ? `Resolvido em ${alert.resolvedAtLabel}` : alert.timeAgo}
           {alert.affectedSkusCount ? ` · SKUs afetados: ${alert.affectedSkusCount.toLocaleString('pt-BR')}` : ''}
         </div>
         {!compact && (
