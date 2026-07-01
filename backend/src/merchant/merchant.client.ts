@@ -14,7 +14,22 @@ export class MerchantClient {
     return { Authorization: `Bearer ${accessToken}` };
   }
 
-  /** GET /products/v1/accounts/{account}/products — paginado, max 1000 */
+  /**
+   * Products API — retorna TODOS os produtos cadastrados no Merchant Center,
+   * incluindo os sem atividade recente. Fonte principal para contagem de
+   * produtos e status de aprovação.
+   *
+   * Anteriormente usávamos a Reports API (product_view), mas ela só retorna
+   * produtos com atividade recente — o que causava contagens incorretas para
+   * contas com produtos sem impressões no período.
+   *
+   * O status vem em destinationStatuses por país/canal. Para derivar o status
+   * agregado equivalente ao painel do Merchant Center, usamos:
+   * - tem approvedCountries → APPROVED (ELIGIBLE)
+   * - tem approvedCountries + disapprovedCountries → LIMITED (ELIGIBLE_LIMITED)
+   * - só disapprovedCountries → DISAPPROVED
+   * - só pendingCountries ou vazio → PENDING
+   */
   async getProductStatuses(accessToken: string, merchantId: string) {
     const headers = await this.authHeader(accessToken);
     const results: any[] = [];
@@ -34,13 +49,9 @@ export class MerchantClient {
   }
 
   /**
-   * Reports API (accounts.reports.search) — fonte oficial de status agregado
-   * por produto. Mais confiável que cruzar products.list manualmente, porque
-   * aggregated_reporting_context_status já reflete exatamente o que o
-   * Merchant Center mostra no painel (Aprovados/Limitados/Reprovados/Em revisão).
-   *
-   * Valores possíveis de aggregated_reporting_context_status:
-   * ELIGIBLE | ELIGIBLE_LIMITED | NOT_ELIGIBLE_OR_DISAPPROVED | PENDING
+   * Reports API (accounts.reports.search) — mantida para referência e debug.
+   * Só retorna produtos com atividade recente no Merchant Center — NÃO usar
+   * como fonte principal de contagem.
    */
   async getProductView(accessToken: string, merchantId: string) {
     const headers = await this.authHeader(accessToken);
@@ -101,46 +112,5 @@ export class MerchantClient {
       { headers, timeout: 30000 },
     );
     return data;
-  }
-
-  async debugRawProductView(accessToken: string, merchantId: string, pageSize = 50) {
-    const headers = await this.authHeader(accessToken);
-    const query =
-      'SELECT offer_id, id, title, aggregated_reporting_context_status, item_issues FROM product_view';
-    const { data } = await axios.post(
-      `${BASE}/reports/v1/accounts/${merchantId}/reports:search`,
-      { query, pageSize },
-      { headers, timeout: 30000 },
-    );
-    return data;
-  }
-
-  /** DEBUG temporário — varre todas as páginas e retorna só os não-ELIGIBLE */
-  async debugFindNonEligible(accessToken: string, merchantId: string) {
-    const headers = await this.authHeader(accessToken);
-    const query =
-      'SELECT offer_id, id, title, aggregated_reporting_context_status, item_issues FROM product_view';
-    const found: any[] = [];
-    let pageToken: string | undefined;
-    let totalScanned = 0;
-
-    do {
-      const { data } = await axios.post(
-        `${BASE}/reports/v1/accounts/${merchantId}/reports:search`,
-        { query, pageSize: 1000, pageToken },
-        { headers, timeout: 30000 },
-      );
-      const results = data.results ?? [];
-      totalScanned += results.length;
-      for (const r of results) {
-        const status = r.productView?.aggregatedReportingContextStatus;
-        if (status !== 'ELIGIBLE') {
-          found.push(r.productView);
-        }
-      }
-      pageToken = data.nextPageToken;
-    } while (pageToken);
-
-    return { totalScanned, totalFound: found.length, found };
   }
 }

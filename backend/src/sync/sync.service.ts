@@ -82,8 +82,8 @@ export class SyncService {
         });
       }
 
-      const productViews = await this.merchantClient.getProductView(access_token, client.merchantId);
-      const merchantProductsForDb = productViews.map((p: any) => this.mapProductView(clientId, p));
+      const productStatuses = await this.merchantClient.getProductStatuses(access_token, client.merchantId);
+      const merchantProductsForDb = productStatuses.map((p: any) => this.mapProductView(clientId, p));
       await this.persistMerchantProducts(clientId, merchantProductsForDb);
 
       // ── Snapshot + diff ──
@@ -181,23 +181,35 @@ export class SyncService {
   }
 
   /**
-   * Mapeia uma linha de product_view (Reports API) para o formato salvo em
-   * merchant_products. offer_id pode vir como "SKUID_SKUID" — extraímos só
-   * a primeira parte, que é o skuId real da VTEX.
+   * Mapeia um produto da Products API v1 para o formato salvo em
+   * merchant_products.
+   *
+   * A Products API retorna TODOS os produtos cadastrados (ao contrário da
+   * Reports API / product_view, que só retorna produtos com atividade recente).
+   *
+   * O status agregado é derivado de status.destinationStatuses:
+   * - tem approvedCountries → APPROVED
+   * - tem approvedCountries + disapprovedCountries → LIMITED
+   * - só disapprovedCountries → DISAPPROVED
+   * - só pendingCountries ou vazio → PENDING
+   *
+   * offer_id pode vir como "SKUID_SKUID" — extraímos só a primeira parte.
    */
   private mapProductView(clientId: string, p: any) {
     const offerId = (p.offerId ?? '').split('_')[0];
+    const approvalStatus = this.deriveApprovalStatus(p.status?.destinationStatuses ?? []);
+
     return {
       clientId,
       offerId,
-      googleProductId: p.id,
+      googleProductId: p.name ?? null,
       title: p.title ?? null,
-      approvalStatus: this.mapApprovalStatus(p.aggregatedReportingContextStatus),
-      shoppingAdsStatus: this.mapDestinationStatus(p.aggregatedReportingContextStatus),
+      approvalStatus,
+      shoppingAdsStatus: approvalStatus === 'LIMITED' ? 'APPROVED' : approvalStatus === 'EXPIRING' ? 'APPROVED' : approvalStatus,
       freeListingsStatus: 'UNSPECIFIED' as const,
-      issues: (p.itemIssues ?? []).map((i: any) => ({
-        code: i.type?.code,
-        description: i.type?.canonicalAttribute ?? i.type?.code ?? 'Problema no produto',
+      issues: (p.status?.itemLevelIssues ?? []).map((i: any) => ({
+        code: i.code,
+        description: i.description ?? i.detail ?? i.code ?? 'Problema no produto',
       })),
       destinationStatuses: [],
       googleCreatedAt: null,
@@ -208,43 +220,29 @@ export class SyncService {
   }
 
   /**
-   * aggregated_reporting_context_status (Reports API) mapeado para o nosso
-   * enum interno. Valores possíveis do Google:
-   * ELIGIBLE | ELIGIBLE_LIMITED | NOT_ELIGIBLE_OR_DISAPPROVED | PENDING
-   *
-   * ELIGIBLE_LIMITED ("Limitado" no painel do Google) é tratado como
-   * categoria própria — não é nem aprovado nem reprovado, mas sim um produto
-   * com visibilidade restrita em alguns países/contextos.
+   * Deriva o status agregado a partir de destinationStatuses da Products API.
+   * Considera apenas o canal SHOPPING_ADS (principal para monitoramento).
+   * Se não houver entrada de SHOPPING_ADS, usa qualquer canal disponível.
    */
-  // DestinationStatus enum (Prisma) não tem LIMITED — produtos "limitados" ainda
-  // aparecem no Shopping Ads, só com alcance restrito, por isso mapeamos para APPROVED.
-  private mapDestinationStatus(status: string): 'APPROVED' | 'DISAPPROVED' | 'PENDING' | 'UNSPECIFIED' {
-    switch (status) {
-      case 'ELIGIBLE':
-      case 'ELIGIBLE_LIMITED':
-        return 'APPROVED';
-      case 'NOT_ELIGIBLE_OR_DISAPPROVED':
-        return 'DISAPPROVED';
-      case 'PENDING':
-        return 'PENDING';
-      default:
-        return 'UNSPECIFIED';
-    }
-  }
+  private deriveApprovalStatus(
+    destinationStatuses: any[],
+  ): 'APPROVED' | 'LIMITED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
+    if (!destinationStatuses.length) return 'PENDING';
 
-  private mapApprovalStatus(status: string): 'APPROVED' | 'LIMITED' | 'DISAPPROVED' | 'PENDING' | 'EXPIRING' {
-    switch (status) {
-      case 'ELIGIBLE':
-        return 'APPROVED';
-      case 'ELIGIBLE_LIMITED':
-        return 'LIMITED';
-      case 'NOT_ELIGIBLE_OR_DISAPPROVED':
-        return 'DISAPPROVED';
-      case 'PENDING':
-        return 'PENDING';
-      default:
-        return 'PENDING';
-    }
+    // Prioriza SHOPPING_ADS; cai no primeiro canal disponível se não encontrar
+    const ds =
+      destinationStatuses.find((d) => d.reportingContext === 'SHOPPING_ADS') ??
+      destinationStatuses[0];
+
+    const approved = (ds.approvedCountries ?? []).length > 0;
+    const disapproved = (ds.disapprovedCountries ?? []).length > 0;
+    const pending = (ds.pendingCountries ?? []).length > 0;
+
+    if (approved && disapproved) return 'LIMITED';   // alguns países aprovados, outros não
+    if (approved) return 'APPROVED';
+    if (disapproved) return 'DISAPPROVED';
+    if (pending) return 'PENDING';
+    return 'PENDING';
   }
 
   private extractTopCauses(products: any[]) {
