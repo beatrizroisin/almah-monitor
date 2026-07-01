@@ -34,10 +34,10 @@ export class SkusController {
   }
 
   @Get('skus/export')
-  async exportCsv(@Query('clientId') clientId: string, @Query('status') status: string, @Res() res: Response) {
-    const csv = await this.service.exportCsvRows({ clientId, status });
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="skus-problematicos.csv"');
-    res.send(csv);
+  async exportXlsx(@Query('clientId') clientId: string, @Query('status') status: string, @Res() res: Response) {
+    const buffer = await this.service.exportXlsxBuffer({ clientId, status });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="skus-problematicos.xlsx"');
+    res.send(Buffer.from(buffer));
   }
 }

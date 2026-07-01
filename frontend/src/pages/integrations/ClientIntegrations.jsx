@@ -30,7 +30,6 @@ export function ClientIntegrationsPage() {
       ]);
       setData(res);
       setLogs(logsRes);
-      setVtexAppKey(res?.vtex?.appKey || '');
     } finally {
       setLoading(false);
     }
@@ -54,7 +53,14 @@ export function ClientIntegrationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  function hasVtexInput() {
+    if (vtexAppKey && vtexAppToken) return true;
+    toast('Por segurança a AppKey/AppToken não ficam salvas na tela — digite as duas para testar ou salvar');
+    return false;
+  }
+
   async function handleTestVtex() {
+    if (!hasVtexInput()) return;
     try {
       await integrationsService.testVtex(id, { appKey: vtexAppKey, appToken: vtexAppToken });
       toast('Conexão VTEX estabelecida com sucesso');
@@ -64,10 +70,13 @@ export function ClientIntegrationsPage() {
   }
 
   async function handleSaveVtex() {
+    if (!hasVtexInput()) return;
     setSaving(true);
     try {
       await integrationsService.updateVtexCredentials(id, { appKey: vtexAppKey, appToken: vtexAppToken });
       toast('Credenciais VTEX salvas com sucesso');
+      setVtexAppKey('');
+      setVtexAppToken('');
       load();
     } catch {
       toast('Erro ao salvar credenciais');
@@ -120,16 +129,24 @@ export function ClientIntegrationsPage() {
         <div className="int-fields">
           <div className="int-field">
             <span className="int-field-label">AppKey</span>
-            <input type="text" value={vtexAppKey} onChange={(e) => setVtexAppKey(e.target.value)} className="mono-input" />
+            <input
+              type="password"
+              placeholder={data.vtex?.hasCredentials ? '•••••••• (configurada — digite para trocar)' : 'Nova AppKey'}
+              value={vtexAppKey}
+              onChange={(e) => setVtexAppKey(e.target.value)}
+              className="mono-input"
+              autoComplete="off"
+            />
           </div>
           <div className="int-field">
             <span className="int-field-label">AppToken</span>
             <input
               type="password"
-              placeholder="Novo AppToken"
+              placeholder={data.vtex?.hasCredentials ? '•••••••• (configurado — digite para trocar)' : 'Novo AppToken'}
               value={vtexAppToken}
               onChange={(e) => setVtexAppToken(e.target.value)}
               className="mono-input"
+              autoComplete="off"
             />
           </div>
           <div className="int-field">

@@ -53,23 +53,13 @@ export class IntegrationsService {
       }
     }
 
-    let vtexAppKey: string | undefined;
-    if (vtex) {
-      try {
-        const creds = this.crypto.decrypt<any>(vtex.credentialsEncrypted);
-        vtexAppKey = creds.appKey;
-      } catch {
-        // idem
-      }
-    }
-
     return {
       clientId: client.id,
       clientName: client.name,
       initials: client.name.split(' ').slice(0, 2).map((w) => w[0]).join(''),
       tone: client.status === 'ACTIVE' ? 'green' : 'red',
       vtex: vtex
-        ? { status: vtex.status, appKey: vtexAppKey, lastSyncLabel: vtex.lastSyncAt?.toLocaleString('pt-BR') ?? 'Nunca' }
+        ? { status: vtex.status, hasCredentials: true, lastSyncLabel: vtex.lastSyncAt?.toLocaleString('pt-BR') ?? 'Nunca' }
         : { status: 'PENDING' },
       google: google
         ? {

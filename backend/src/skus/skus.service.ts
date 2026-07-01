@@ -1,12 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Workbook } from 'exceljs';
 import { PrismaService } from '../prisma/prisma.service';
-
-// Produtos e valores em BR usam vírgula (ex: "1,95X1,35"), então todo campo
-// precisa ir entre aspas — senão a vírgula do próprio texto quebra as colunas do CSV.
-function csvEscape(value: unknown): string {
-  const str = value === null || value === undefined ? '' : String(value);
-  return `"${str.replace(/"/g, '""')}"`;
-}
 
 const issueTypeLabels: Record<string, string> = {
   price_mismatch: 'Preço divergente',
@@ -113,19 +107,37 @@ export class SkusService {
     });
   }
 
-  async exportCsvRows(params: { clientId?: string; status?: string }) {
+  /** Gera um .xlsx real (colunas de verdade, sem quebra por vírgula em texto). */
+  async exportXlsxBuffer(params: { clientId?: string; status?: string }) {
     const rows = await this.listProblematic(params);
-    const header = 'cliente,sku_id,produto,marca,problema,status,severidade\n';
-    const body = rows
-      .map((r: any) =>
-        [r.clientName, r.skuId, r.productName, r.brand, r.issue, r.statusLabel, r.severity]
-          .map(csvEscape)
-          .join(','),
-      )
-      .join('\n');
-    const BOM = String.fromCharCode(0xfeff);
-    // BOM para o Excel reconhecer UTF-8 (acentos) ao abrir o CSV direto.
-    return BOM + header + body;
+
+    const workbook = new Workbook();
+    const sheet = workbook.addWorksheet('SKUs problemáticos');
+
+    sheet.columns = [
+      { header: 'Cliente', key: 'clientName', width: 28 },
+      { header: 'SKU ID', key: 'skuId', width: 18 },
+      { header: 'Produto', key: 'productName', width: 45 },
+      { header: 'Marca', key: 'brand', width: 20 },
+      { header: 'Problema', key: 'issue', width: 45 },
+      { header: 'Status', key: 'statusLabel', width: 14 },
+      { header: 'Severidade', key: 'severity', width: 14 },
+    ];
+    sheet.getRow(1).font = { bold: true };
+
+    for (const r of rows as any[]) {
+      sheet.addRow({
+        clientName: r.clientName,
+        skuId: r.skuId,
+        productName: r.productName,
+        brand: r.brand,
+        issue: r.issue,
+        statusLabel: r.statusLabel,
+        severity: r.severity,
+      });
+    }
+
+    return workbook.xlsx.writeBuffer();
   }
 
   private async indexVtexSkus(offerIds: string[]) {

@@ -50,12 +50,12 @@ export function SkusPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `skus-problematicos-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `skus-problematicos-${new Date().toISOString().slice(0, 10)}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
-      toast('CSV exportado com sucesso');
+      toast('Planilha exportada com sucesso');
     } catch {
-      toast('Erro ao exportar CSV');
+      toast('Erro ao exportar planilha');
     }
   }
 
@@ -107,7 +107,7 @@ export function SkusPage() {
                 <option value="expired">Expirado</option>
               </select>
               <Button size="sm" icon={<IconDownload />} onClick={handleExport}>
-                Exportar CSV
+                Exportar planilha
               </Button>
             </div>
           }
